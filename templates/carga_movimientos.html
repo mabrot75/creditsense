@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carga de Movimientos Multi-Banco | CreditSense</title>
+  
+  <link rel="stylesheet" href="/static/css/style.css">
+  
+  <style>
+    :root {
+      --primary-dark: #0a1128;
+      --accent-sky: #0284c7;
+      --accent-sky-hover: #0369a1;
+      --accent-emerald: #10b981;
+      --accent-emerald-hover: #059669;
+      --bg-page: #f8fafc;
+      --border-card: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    body {
+      background: var(--bg-page); color: var(--text-main); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    }
+    .nav-bar {
+      background: var(--primary-dark); color: #fff; padding: 0 24px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 14px;
+      border-radius: 8px; transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .nav-link.active { color: #fff; background: rgba(2,132,199,0.3); border: 1px solid rgba(56,189,248,0.4); }
+
+    .main-wrap { max-width: 960px; margin: 30px auto; padding: 0 20px; width: 100%; flex: 1; }
+    .card {
+      background: #fff; border: 1px solid var(--border-card); border-radius: var(--radius-lg);
+      padding: 28px; box-shadow: var(--shadow-sm); margin-bottom: 24px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    label { font-size: 12px; font-weight: 700; color: var(--text-main); }
+    .input-field, select {
+      padding: 10px 12px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: var(--radius-sm);
+      outline: none; background: #fff; font-family: inherit; color: var(--text-main);
+    }
+    .input-field:focus, select:focus { border-color: var(--accent-sky); }
+
+    .bank-preset-btn {
+      font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid #cbd5e1;
+      background: #f8fafc; color: var(--text-muted); cursor: pointer; font-weight: 600;
+    }
+    .bank-preset-btn:hover { background: #e0f2fe; color: #0284c7; border-color: #7dd3fc; }
+
+    .dropzone {
+      border: 2px dashed #cbd5e1; border-radius: var(--radius-md); padding: 36px 20px;
+      text-align: center; cursor: pointer; background: #f8fafc; transition: all 0.2s;
+    }
+    .dropzone:hover { border-color: var(--accent-emerald); background: #f0fdf4; }
+
+    .accumulation-banner {
+      background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md);
+      padding: 16px; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;
+    }
+
+    .success-result-card {
+      background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-md);
+      padding: 20px; margin-top: 20px; display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="nav-bar">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, #0284c7 0%, #4f46e5 100%); display:flex; align-items:center; justify-content:center; color:#fff;">
+        <span data-icon="shield-check" style="width:22px; height:22px;"></span>
+      </div>
+      <div>
+        <span style="font-size:19px; font-weight:800; color:#fff;">CreditSense</span>
+        <span style="font-size:11px; background:rgba(2,132,199,0.25); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:999px; margin-left:8px; font-weight:600;">
+          Carga Multi-Banco
+        </span>
+      </div>
+    </div>
+
+    <!-- Menú Principal -->
+    <nav class="nav-links">
+      <a href="/" class="nav-link">
+        <span data-icon="shield-check" style="width:15px; height:15px;"></span> Inicio
+      </a>
+      <a href="/clientes" class="nav-link">
+        <span data-icon="users" style="width:15px; height:15px;"></span> 1. Clientes
+      </a>
+      <a href="/carga-movimientos" class="nav-link active">
+        <span data-icon="upload-cloud" style="width:15px; height:15px;"></span> 2. Carga de Movimientos
+      </a>
+      <a href="/simulador" class="nav-link">
+        <span data-icon="calculator" style="width:15px; height:15px;"></span> 3. Simulador
+      </a>
+    </nav>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="main-wrap">
+    
+    <div style="margin-bottom:24px;">
+      <h1 style="font-size:22px; font-weight:900; color:var(--text-main);">Carga y Consolidación de Movimientos Multi-Banco</h1>
+      <p style="font-size:13px; color:var(--text-muted); margin-top:2px;">
+        Importa estados de cuenta en Excel o CSV y <strong>acumula ingresos y débitos de diferentes bancos</strong> para un mismo cliente.
+      </p>
+    </div>
+
+    <!-- CARD FORM -->
+    <div class="card">
+      <form id="uploadBankForm" onsubmit="handleMultiBankUpload(event)">
+        
+        <!-- SELECCIONAR CLIENTE -->
+        <div class="form-group">
+          <label for="selectClient">1. Selecciona el Cliente a quien pertenecen los movimientos *</label>
+          <select id="selectClient" name="client_id" required onchange="onClientChanged(this.value)">
+            <option value="">-- Elige un cliente de la base de datos --</option>
+            {% for c in candidates %}
+              <option value="{{ c.client_info.id }}" data-key="{{ c.perfil_key }}">
+                {{ c.client_info.nombre }} (RUT: {{ c.client_info.rut_dni }}) - {{ c.total_transacciones }} ops
+              </option>
+            {% endfor %}
+          </select>
+          <span id="clientBanksSummary" style="font-size:11px; color:#64748b; margin-top:2px;"></span>
+        </div>
+
+        <!-- SELECCIONAR BANCO DE ORIGEN -->
+        <div class="form-group" style="margin-top:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+            <label for="bancoOrigen">2. Banco o Entidad Financiera de Origen *</label>
+            <div style="display:flex; gap:4px; flex-wrap:wrap;">
+              <button type="button" onclick="setBankName('Banco Santander')" class="bank-preset-btn">Santander</button>
+              <button type="button" onclick="setBankName('Banco de Chile')" class="bank-preset-btn">Banco de Chile</button>
+              <button type="button" onclick="setBankName('Banco Estado')" class="bank-preset-btn">Banco Estado</button>
+              <button type="button" onclick="setBankName('Bci')" class="bank-preset-btn">Bci</button>
+              <button type="button" onclick="setBankName('Scotiabank')" class="bank-preset-btn">Scotiabank</button>
+              <button type="button" onclick="setBankName('Banco Falabella')" class="bank-preset-btn">Falabella</button>
+            </div>
+          </div>
+          <input type="text" id="bancoOrigen" name="banco_origen" class="input-field" placeholder="Ej. Banco Santander / Cuenta Corriente 002" required value="Banco Santander">
+        </div>
+
+        <!-- MODO DE CARGA: ACUMULACIÓN MULTI-BANCO -->
+        <div class="accumulation-banner">
+          <input type="checkbox" id="checkAcumular" name="acumular" checked style="width:18px; height:18px; accent-color:#059669; margin-top:2px; cursor:pointer;">
+          <div>
+            <label for="checkAcumular" style="font-size:13px; font-weight:800; color:#065f46; cursor:pointer; display:block;">
+              Acumular movimientos con los bancos ya registrados de este cliente
+            </label>
+            <p style="font-size:11px; color:#047857; margin-top:2px; line-height:1.4;">
+              Al mantener esta casilla marcada, los ingresos y débitos de este archivo se <strong>sumarán a los movimientos previos</strong> del cliente, permitiendo consolidar su liquidez y capacidad total entre múltiples cuentas.
+            </p>
+          </div>
+        </div>
+
+        <!-- DROPZONE ARCHIVO -->
+        <div class="form-group">
+          <label>3. Archivo con Estados de Cuenta (CSV o Excel .xlsx) *</label>
+          <div id="dropZone" class="dropzone" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" name="file" accept=".csv, .xlsx, .xls" style="display:none;" onchange="onFileSelected(this)">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <span data-icon="upload-cloud" style="width:40px; height:40px; color:#059669;"></span>
+              <span id="dropZoneText" style="font-size:13px; font-weight:700; color:var(--text-main);">
+                Arrastra tu archivo aquí o haz clic para seleccionarlo
+              </span>
+              <span style="font-size:11px; color:#94a3b8;">Formatos admitidos: .XLSX (Excel), .CSV (Máx. 16MB)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DESCARGA PLANTILLA -->
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; font-size:12px; margin-bottom:20px;">
+          <span style="color:#64748b;">¿Necesitas ver las columnas aceptadas?</span>
+          <a href="/api/download-template" style="color:#0284c7; font-weight:700; text-decoration:none;">
+            📥 Descargar Plantilla Excel de Ejemplo
+          </a>
+        </div>
+
+        <!-- MENSAJE DE ERROR -->
+        <div id="errorMessage" style="display:none; padding:12px; border-radius:8px; background:#fff1f2; border:1px solid #fecdd3; color:#9f1239; font-size:12px; font-weight:600; margin-bottom:16px;"></div>
+
+        <!-- BOTÓN SUBMIT -->
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <a href="/clientes" class="btn btn-secondary" style="padding:10px 18px;">Cancelar</a>
+          <button type="submit" id="btnUpload" class="btn btn-primary" style="background:#10b981; padding:10px 28px; font-size:13px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+            <span data-icon="upload-cloud" style="width:16px; height:16px;"></span>
+            Procesar y Acumular Movimientos
+          </button>
+        </div>
+
+      </form>
+
+      <!-- RESULTADO EXITOSO TRAS LA CARGA -->
+      <div id="successResultCard" class="success-result-card">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#10b981; color:#fff; display:flex; align-items:center; justify-content:center;">
+            <span data-icon="check-circle" style="width:20px; height:20px;"></span>
+          </div>
+          <div>
+            <h3 style="font-size:16px; font-weight:800; color:#065f46;">¡Movimientos Acumulados Exitosamente!</h3>
+            <p id="successSummaryText" style="font-size:12px; color:#047857; margin-top:2px;">
+              Los movimientos del banco han sido consolidados en el perfil del cliente.
+            </p>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; background:#fff; border:1px solid #bbf7d0; border-radius:8px; padding:12px; margin: 14px 0;">
+          <div style="text-align:center;">
+            <span style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase;">Transacciones Añadidas</span>
+            <div id="resCountAdded" style="font-size:18px; font-weight:800; color:#047857;">+0</div>
+          </div>
+          <div style="text-align:center;">
+            <span style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase;">Ingresos Consolidados</span>
+            <div id="resIngresosTotal" style="font-size:18px; font-weight:800; color:#0284c7;">$0.00</div>
+          </div>
+          <div style="text-align:center;">
+            <span style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase;">Egresos Consolidados</span>
+            <div id="resEgresosTotal" style="font-size:18px; font-weight:800; color:#f43f5e;">$0.00</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+          <button type="button" onclick="resetUploadForm()" class="btn btn-secondary" style="font-size:12px; padding:8px 14px;">
+            Cargar Otro Banco / Archivo
+          </button>
+          <a id="btnGoToSimulador" href="/simulador" class="btn btn-primary" style="background:#0284c7; font-size:12px; padding:8px 20px;">
+            Ver en el Simulador y Evaluar Scoring →
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer style="background:#fff; border-top:1px solid #e2e8f0; padding:16px; text-align:center; font-size:12px; color:#64748b; margin-top:auto;">
+    CreditSense • Carga y Consolidación Multi-Banco • Base de Datos SQLite
+  </footer>
+
+  <script src="/static/js/icons.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAllIcons();
+      // Si viene ?client_id= en la URL, seleccionarlo automáticamente
+      const urlParams = new URLSearchParams(window.location.search);
+      const clientId = urlParams.get('client_id');
+      if (clientId) {
+        document.getElementById('selectClient').value = clientId;
+        onClientChanged(clientId);
+      }
+    });
+
+    function setBankName(name) {
+      document.getElementById('bancoOrigen').value = name;
+    }
+
+    function onFileSelected(input) {
+      if (input.files && input.files[0]) {
+        document.getElementById('dropZoneText').innerText = `Archivo seleccionado: ${input.files[0].name} (${(input.files[0].size / 1024).toFixed(1)} KB)`;
+      }
+    }
+
+    function onClientChanged(clientId) {
+      if (!clientId) {
+        document.getElementById('clientBanksSummary').innerText = '';
+        return;
+      }
+      document.getElementById('clientBanksSummary').innerText = 'Cliente seleccionado para consolidar.';
+    }
+
+    async function handleMultiBankUpload(e) {
+      e.preventDefault();
+      const clientSelect = document.getElementById('selectClient');
+      const fileInput = document.getElementById('fileInput');
+      const errDiv = document.getElementById('errorMessage');
+      errDiv.style.display = 'none';
+
+      if (!clientSelect.value) {
+        errDiv.innerText = "Por favor selecciona un cliente de la lista.";
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        errDiv.innerText = "Por favor selecciona un archivo CSV o Excel (.xlsx).";
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      const btn = document.getElementById('btnUpload');
+      btn.disabled = true;
+      btn.innerText = "Procesando y acumulando...";
+
+      const formData = new FormData();
+      formData.append('client_id', clientSelect.value);
+      formData.append('banco_origen', document.getElementById('bancoOrigen').value.trim() || 'Banco Adicional');
+      formData.append('acumular', document.getElementById('checkAcumular').checked ? 'true' : 'false');
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const resp = await fetch('/api/upload-bank-movements', {
+          method: 'POST',
+          body: formData
+        });
+        const res = await resp.json();
+
+        if (res.success) {
+          document.getElementById('successResultCard').style.display = 'block';
+          document.getElementById('resCountAdded').innerText = '+' + res.transacciones_agregadas;
+          document.getElementById('resIngresosTotal').innerText = '$' + Number(res.total_ingresos_acumulados).toLocaleString('en-US', {minimumFractionDigits: 2});
+          document.getElementById('resEgresosTotal').innerText = '$' + Number(res.total_egresos_acumulados).toLocaleString('en-US', {minimumFractionDigits: 2});
+          document.getElementById('successSummaryText').innerText = res.message;
+
+          // Configurar botón para ir al simulador con el cliente evaluado
+          const selectedOption = clientSelect.options[clientSelect.selectedIndex];
+          const perfilKey = selectedOption.getAttribute('data-key') || res.perfil_key;
+          document.getElementById('btnGoToSimulador').href = `/simulador?client=${perfilKey}`;
+        } else {
+          errDiv.innerText = res.error || "Ocurrió un error al procesar el archivo.";
+          errDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errDiv.innerText = "Error de conexión al cargar movimientos.";
+        errDiv.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span data-icon="upload-cloud" style="width:16px; height:16px;"></span> Procesar y Acumular Movimientos`;
+        renderAllIcons();
+      }
+    }
+
+    function resetUploadForm() {
+      document.getElementById('uploadBankForm').reset();
+      document.getElementById('dropZoneText').innerText = "Arrastra tu archivo aquí o haz clic para seleccionarlo";
+      document.getElementById('successResultCard').style.display = 'none';
+      document.getElementById('errorMessage').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 """
-Servidor Web Flask para el Módulo de Consulta y Evaluación Crediticia Bancaria.
-Proporciona endpoints REST y renderiza la interfaz gráfica moderna tipo Banca/FinTech.
+Servidor Web Flask para CreditSense - Plataforma de Evaluación Crediticia Multi-Banco.
+Controla los módulos de Clientes, Carga de Movimientos Multi-Banco y Simulador Crediticio.
 """
 
 import os
@@ -11,8 +11,9 @@ import pandas as pd
 from backend.credit_engine import CreditAnalysisEngine
 from backend.sample_data import export_sample_files_to_disk
 from backend.database import (
-    init_db, get_all_clients, get_client_by_key, 
-    save_client_to_db, generate_transactions_from_monthly_inputs
+    init_db, get_all_clients, get_client_by_key, get_client_by_id,
+    save_client_to_db, update_client_info, delete_client_by_id,
+    append_transactions_to_client, generate_transactions_from_monthly_inputs
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -29,9 +30,34 @@ if not os.path.exists(SAMPLE_DIR) or len(os.listdir(SAMPLE_DIR)) == 0:
     export_sample_files_to_disk(SAMPLE_DIR)
 
 
+# =========================================================================
+# VISTAS PRINCIPALES (FRONTEND)
+# =========================================================================
+
 @app.route('/')
-def index():
-    """Página principal del Dashboard Crediticio"""
+def home_portal():
+    """Portal Principal de Bienvenida y Acceso a los 3 Módulos"""
+    candidates = get_all_clients()
+    return render_template('index.html', candidates=candidates)
+
+
+@app.route('/clientes')
+def clientes_view():
+    """Módulo 1: Gestión de Cartera de Clientes (Consulta, Edición, Eliminación)"""
+    candidates = get_all_clients()
+    return render_template('clientes.html', candidates=candidates)
+
+
+@app.route('/carga-movimientos')
+def carga_movimientos_view():
+    """Módulo 2: Carga y Consolidación de Movimientos de Diferentes Bancos"""
+    candidates = get_all_clients()
+    return render_template('carga_movimientos.html', candidates=candidates)
+
+
+@app.route('/simulador')
+def simulador_view():
+    """Módulo 3: Simulador y Desglose Analítico de Scoring y Dictamen"""
     candidates = get_all_clients()
     sample_files = [f for f in os.listdir(SAMPLE_DIR) if f.endswith(('.csv', '.xlsx'))]
     return render_template('dashboard.html', candidates=candidates, sample_files=sample_files)
@@ -43,15 +69,19 @@ def nuevo_cliente_view():
     return render_template('nuevo_cliente.html')
 
 
+# =========================================================================
+# API REST (CLIENTES Y CONSULTAS)
+# =========================================================================
+
 @app.route('/api/candidates', methods=['GET'])
 def list_candidates():
-    """Lista los candidatos disponibles en la base de datos (precargados y personalizados)"""
+    """Lista todos los clientes disponibles en la base de datos SQLite"""
     return jsonify(get_all_clients())
 
 
 @app.route('/api/candidate/<candidate_key>', methods=['GET'])
 def get_candidate_analysis(candidate_key):
-    """Ejecuta el análisis de los últimos 6 meses para un candidato almacenado en SQLite"""
+    """Ejecuta el análisis de 6 meses para un candidato almacenado en SQLite"""
     try:
         client_info, txs = get_client_by_key(candidate_key)
         if not client_info or not txs:
@@ -63,23 +93,57 @@ def get_candidate_analysis(candidate_key):
         return jsonify({'success': False, 'error': str(e)}), 400
 
 
+@app.route('/api/client/update', methods=['POST'])
+def update_client():
+    """Modifica la información personal y laboral de un cliente existente"""
+    try:
+        data = request.json or {}
+        client_id = data.get('client_id')
+        updated_info = data.get('updated_info', {})
+
+        if not client_id or not updated_info:
+            return jsonify({'success': False, 'error': 'Faltan parámetros requeridos.'}), 400
+
+        success = update_client_info(client_id, updated_info)
+        if success:
+            return jsonify({'success': True, 'message': 'Cliente actualizado correctamente.'})
+        return jsonify({'success': False, 'error': 'No se encontró el cliente para actualizar.'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/client/delete', methods=['POST'])
+def delete_client():
+    """Elimina permanentemente un cliente y sus transacciones de la base de datos"""
+    try:
+        data = request.json or {}
+        client_id = data.get('client_id')
+
+        if not client_id:
+            return jsonify({'success': False, 'error': 'ID de cliente no proporcionado.'}), 400
+
+        success = delete_client_by_id(client_id)
+        if success:
+            return jsonify({'success': True, 'message': 'Cliente eliminado exitosamente.'})
+        return jsonify({'success': False, 'error': 'No se encontró el cliente a eliminar.'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/save-client', methods=['POST'])
 def save_new_client():
-    """
-    Endpoint para crear y almacenar en la base de datos SQLite un cliente nuevo desde cero
-    junto con sus movimientos de los últimos 6 meses.
-    """
+    """Crea y almacena en SQLite un cliente nuevo desde cero con sus movimientos"""
     try:
         data = request.json or {}
         client_info = data.get('client_info', {})
         monthly_data = data.get('monthly_data', [])
         raw_transactions = data.get('transactions', [])
 
-        # Validaciones básicas
         if not client_info.get('nombre') or not client_info.get('rut_dni'):
-            return jsonify({'success': False, 'error': 'El nombre completo y RUT/DNI son obligatorios.'}), 400
+            return jsonify({'success': False, 'error': 'El nombre y RUT/DNI son obligatorios.'}), 400
 
-        # Si viene información mensual (6 meses), generar las transacciones
         if monthly_data and len(monthly_data) > 0:
             initial_balance = float(data.get('saldo_inicial', 1500.0))
             transactions = generate_transactions_from_monthly_inputs(monthly_data, initial_balance=initial_balance)
@@ -88,13 +152,12 @@ def save_new_client():
         else:
             return jsonify({'success': False, 'error': 'Debe ingresar al menos los movimientos de los últimos 6 meses.'}), 400
 
-        # Guardar en base de datos SQLite
         perfil_key = save_client_to_db(client_info, transactions, es_personalizado=1)
 
         return jsonify({
             'success': True,
             'perfil_key': perfil_key,
-            'message': f"Cliente {client_info['nombre']} guardado exitosamente en la base de datos.",
+            'message': f"Cliente {client_info['nombre']} guardado exitosamente en SQLite.",
             'total_transacciones': len(transactions)
         })
 
@@ -102,41 +165,49 @@ def save_new_client():
         return jsonify({'success': False, 'error': f'Error al guardar en base de datos: {str(e)}'}), 500
 
 
+# =========================================================================
+# API REST (CARGA MULTI-BANCO Y SIMULACIÓN)
+# =========================================================================
 
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
+@app.route('/api/upload-bank-movements', methods=['POST'])
+def upload_bank_movements():
     """
-    Recibe un archivo CSV o Excel con transacciones,
-    normaliza las columnas y genera el dictamen crediticio de 6 meses.
+    Recibe un archivo CSV o Excel para un cliente específico y permite
+    acumular los movimientos provenientes de diferentes bancos.
     """
     if 'file' not in request.files:
         return jsonify({'success': False, 'error': 'No se envió ningún archivo.'}), 400
         
     file = request.files['file']
-    if file.filename == '':
-        return jsonify({'success': False, 'error': 'Nombre de archivo vacío.'}), 400
+    client_id = request.form.get('client_id')
+    banco_origen = request.form.get('banco_origen', 'Banco Adicional').strip() or 'Banco Adicional'
+    acumular = request.form.get('acumular', 'true').lower() == 'true'
 
-    filename = file.filename.lower()
+    if not client_id:
+        return jsonify({'success': False, 'error': 'Debe seleccionar un cliente.'}), 400
+
+    client_record = get_client_by_id(client_id)
+    if not client_record:
+        return jsonify({'success': False, 'error': 'Cliente no encontrado en la base de datos.'}), 404
+
     try:
+        filename = file.filename.lower()
         if filename.endswith('.csv'):
             df = pd.read_csv(file)
         elif filename.endswith(('.xlsx', '.xls')):
-            # Si el archivo tiene la hoja 'Movimientos', usarla; de lo contrario la primera
             excel_file = pd.ExcelFile(file)
             sheet_name = 'Movimientos' if 'Movimientos' in excel_file.sheet_names else excel_file.sheet_names[0]
             df = pd.read_excel(excel_file, sheet_name=sheet_name)
         else:
-            return jsonify({'success': False, 'error': 'Formato no soportado. Debe ser CSV o Excel (.xlsx).'}), 400
+            return jsonify({'success': False, 'error': 'Formato no admitido. Debe ser CSV o Excel (.xlsx).'}), 400
 
-        # Normalizar nombres de columnas a minúsculas y sin acentos
+        # Normalizar columnas
         col_map = {}
         for col in df.columns:
-            clean_col = str(col).lower().strip()
-            clean_col = clean_col.replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
-            
+            clean_col = str(col).lower().strip().replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
             if 'fecha' in clean_col or 'date' in clean_col:
                 col_map[col] = 'fecha'
-            elif 'monto' in clean_col or 'amount' in clean_col or 'importe' in clean_col or 'valor' in clean_col:
+            elif 'monto' in clean_col or 'amount' in clean_col or 'importe' in clean_col:
                 col_map[col] = 'monto'
             elif 'tipo' in clean_col or 'type' in clean_col:
                 col_map[col] = 'tipo'
@@ -146,70 +217,50 @@ def upload_file():
                 col_map[col] = 'descripcion'
             elif 'saldo' in clean_col or 'balance' in clean_col:
                 col_map[col] = 'saldo_resultante'
-                
+
         df = df.rename(columns=col_map)
-        
-        # Validar campos indispensables
-        required_cols = ['fecha', 'monto', 'tipo']
-        missing = [rc for rc in required_cols if rc not in df.columns]
-        if missing:
-            return jsonify({
-                'success': False, 
-                'error': f'Faltan columnas requeridas en el archivo: {", ".join(missing)}. Las columnas deben incluir Fecha, Monto, Tipo (INGRESO/EGRESO).'
-            }), 400
 
-        # Rellenar columnas opcionales si faltan
-        if 'categoria' not in df.columns:
-            df['categoria'] = 'Varios'
-        if 'descripcion' not in df.columns:
-            df['descripcion'] = 'Movimiento registrado'
-        if 'saldo_resultante' not in df.columns:
-            # Reconstruir un saldo proyectado sumando ingresos y restando egresos
-            saldo_simulado = 1000.0
-            saldos = []
-            for _, row in df.iterrows():
-                m = float(row.get('monto', 0.0))
-                t = str(row.get('tipo', '')).upper()
-                if 'ING' in t:
-                    saldo_simulado += m
-                else:
-                    saldo_simulado -= m
-                saldos.append(round(saldo_simulado, 2))
-            df['saldo_resultante'] = saldos
+        if 'fecha' not in df.columns or 'monto' not in df.columns or 'tipo' not in df.columns:
+            return jsonify({'success': False, 'error': 'El archivo debe contener al menos las columnas Fecha, Monto y Tipo (INGRESO/EGRESO).'}), 400
 
-        transactions = df.to_dict(orient='records')
-        
-        # Extraer nombre del cliente del formulario si fue provisto
-        client_name = request.form.get('nombre_cliente', os.path.splitext(file.filename)[0].replace('_', ' ').title())
-        client_dni = request.form.get('rut_dni', 'Importado por Archivo')
-        client_ocupacion = request.form.get('ocupacion', 'Titular de Cuenta')
+        if 'categoria' not in df.columns: df['categoria'] = 'Varios'
+        if 'descripcion' not in df.columns: df['descripcion'] = f'Movimiento {banco_origen}'
+        if 'saldo_resultante' not in df.columns: df['saldo_resultante'] = 0.0
 
-        client_info = {
-            'id': 'IMP-' + str(abs(hash(file.filename)) % 10000),
-            'nombre': client_name,
-            'rut_dni': client_dni,
-            'ocupacion': client_ocupacion,
-            'empresa': 'Registrada en Estado de Cuenta',
-            'tipo_contrato': 'Auditado por Movimientos',
-            'antiguedad_laboral_anios': 'N/D',
-            'antiguedad_bancaria_meses': 6,
-            'avatar': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
-            'etiqueta_perfil': 'Candidato Evaluado vía Archivo Externo'
-        }
+        new_transactions = df.to_dict(orient='records')
 
-        analysis = engine.analyze_transactions(transactions, client_info)
-        return jsonify({'success': True, 'data': analysis})
+        # Acumular o reemplazar en SQLite
+        agregadas = append_transactions_to_client(
+            client_id=client_id,
+            new_transactions=new_transactions,
+            banco_origen=banco_origen,
+            reemplazar=(not acumular)
+        )
+
+        # Calcular totales acumulados
+        client_info, all_txs = get_client_by_key(client_record['perfil_key'])
+        df_all = pd.DataFrame(all_txs)
+        total_ingresos = float(df_all[df_all['tipo'].str.contains('ING', case=False, na=False)]['monto'].sum()) if not df_all.empty else 0.0
+        total_egresos = float(df_all[df_all['tipo'].str.contains('EGR', case=False, na=False)]['monto'].sum()) if not df_all.empty else 0.0
+
+        return jsonify({
+            'success': True,
+            'message': f"Se han {'acumulado' if acumular else 'reemplazado'} {agregadas} movimientos de {banco_origen} para {client_record['nombre']}.",
+            'transacciones_agregadas': agregadas,
+            'total_transacciones_cliente': len(all_txs),
+            'total_ingresos_acumulados': round(total_ingresos, 2),
+            'total_egresos_acumulados': round(total_egresos, 2),
+            'bancos_consolidados': client_info['bancos'],
+            'perfil_key': client_record['perfil_key']
+        })
 
     except Exception as e:
-        return jsonify({'success': False, 'error': f'Error al procesar el archivo: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': f'Error al procesar movimientos: {str(e)}'}), 500
 
 
 @app.route('/api/simulate-loan', methods=['POST'])
 def simulate_loan():
-    """
-    Simula dinámicamente un crédito bancario con monto y plazo personalizados,
-    validando si la cuota supera la capacidad de pago máxima mensual del candidato.
-    """
+    """Simula dinámicamente un crédito validando la capacidad de pago del candidato"""
     try:
         data = request.json or {}
         monto = float(data.get('monto', 5000.0))
@@ -239,40 +290,78 @@ def simulate_loan():
             'intereses_totales': intereses_totales,
             'capacidad_maxima': capacidad_maxima,
             'excede_capacidad': excede_capacidad,
-            'porcentaje_compromiso': porcentaje_compromiso,
-            'estado': 'ALERTA_CAPACIDAD' if excede_capacidad else 'APROBADO_VIABLE'
+            'porcentaje_compromiso': porcentaje_compromiso
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
 
+@app.route('/api/upload', methods=['POST'])
+def legacy_upload():
+    """Subida rápida de estado de cuenta para análisis ad-hoc en simulador"""
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No se envió ningún archivo.'}), 400
+    file = request.files['file']
+    try:
+        filename = file.filename.lower()
+        if filename.endswith('.csv'): df = pd.read_csv(file)
+        else: df = pd.read_excel(file)
+
+        col_map = {}
+        for col in df.columns:
+            clean_col = str(col).lower().strip().replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
+            if 'fecha' in clean_col or 'date' in clean_col: col_map[col] = 'fecha'
+            elif 'monto' in clean_col or 'amount' in clean_col: col_map[col] = 'monto'
+            elif 'tipo' in clean_col: col_map[col] = 'tipo'
+            elif 'cat' in clean_col: col_map[col] = 'categoria'
+            elif 'desc' in clean_col: col_map[col] = 'descripcion'
+            elif 'saldo' in clean_col: col_map[col] = 'saldo_resultante'
+        df = df.rename(columns=col_map)
+        if 'categoria' not in df.columns: df['categoria'] = 'Varios'
+        if 'descripcion' not in df.columns: df['descripcion'] = 'Movimiento'
+        if 'saldo_resultante' not in df.columns: df['saldo_resultante'] = 1000.0
+
+        transactions = df.to_dict(orient='records')
+        client_name = request.form.get('nombre_cliente', 'Cliente Importado')
+        client_info = {
+            'id': 'IMP-' + str(abs(hash(file.filename)) % 10000),
+            'nombre': client_name,
+            'rut_dni': request.form.get('rut_dni', 'S/D'),
+            'ocupacion': 'Titular de Cuenta',
+            'empresa': 'Auditado por Movimientos',
+            'tipo_contrato': 'Auditado',
+            'antiguedad_laboral_anios': 2.0,
+            'antiguedad_bancaria_meses': 12,
+            'avatar': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+            'etiqueta_perfil': 'Importado vía Archivo'
+        }
+        analysis = engine.analyze_transactions(transactions, client_info)
+        return jsonify({'success': True, 'data': analysis})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/download-template')
 def download_template():
-    """Descarga una plantilla modelo Excel para que el usuario pueda ingresar sus propios datos"""
+    """Descarga plantilla Excel modelo con movimientos de ejemplo"""
     template_data = [
-        {'fecha': '2026-05-15', 'descripcion': 'ABONO REMUNERACION MENSUAL', 'categoria': 'Nomina/Sueldo', 'tipo': 'INGRESO', 'monto': 2500.0, 'saldo_resultante': 3200.0},
-        {'fecha': '2026-05-18', 'descripcion': 'PAGO ARRIENDO PROPIEDAD', 'categoria': 'Servicios/Vivienda', 'tipo': 'EGRESO', 'monto': 700.0, 'saldo_resultante': 2500.0},
-        {'fecha': '2026-05-20', 'descripcion': 'SUPERMERCADO Y ALIMENTOS', 'categoria': 'Alimentacion/Supermercado', 'tipo': 'EGRESO', 'monto': 200.0, 'saldo_resultante': 2300.0},
-        {'fecha': '2026-05-25', 'descripcion': 'PAGO CUOTA PRESTAMO VIGENTE', 'categoria': 'Cuota Prestamo', 'tipo': 'EGRESO', 'monto': 180.0, 'saldo_resultante': 2120.0},
-        {'fecha': '2026-06-15', 'descripcion': 'ABONO REMUNERACION MENSUAL', 'categoria': 'Nomina/Sueldo', 'tipo': 'INGRESO', 'monto': 2500.0, 'saldo_resultante': 4620.0}
+        {'fecha': '2026-05-05', 'descripcion': 'ABONO REMUNERACION SUELDO', 'categoria': 'Nomina/Sueldo', 'tipo': 'INGRESO', 'monto': 2800.0, 'saldo_resultante': 3400.0},
+        {'fecha': '2026-05-08', 'descripcion': 'PAGO ARRIENDO / VIVIENDA', 'categoria': 'Servicios/Vivienda', 'tipo': 'EGRESO', 'monto': 800.0, 'saldo_resultante': 2600.0},
+        {'fecha': '2026-05-12', 'descripcion': 'CUOTA PRESTAMO BANCARIO VIGENTE', 'categoria': 'Cuota Prestamo', 'tipo': 'EGRESO', 'monto': 220.0, 'saldo_resultante': 2380.0},
+        {'fecha': '2026-05-18', 'descripcion': 'SUPERMERCADO Y ALIMENTOS', 'categoria': 'Alimentacion/Supermercado', 'tipo': 'EGRESO', 'monto': 260.0, 'saldo_resultante': 2120.0},
+        {'fecha': '2026-06-05', 'descripcion': 'ABONO REMUNERACION SUELDO', 'categoria': 'Nomina/Sueldo', 'tipo': 'INGRESO', 'monto': 2800.0, 'saldo_resultante': 4920.0}
     ]
     df = pd.DataFrame(template_data)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Movimientos', index=False)
     output.seek(0)
-    return send_file(output, as_attachment=True, download_name='plantilla_movimientos_6_meses.xlsx', mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
-
-@app.route('/api/download-sample/<filename>')
-def download_sample_file(filename):
-    """Permite descargar cualquiera de los archivos CSV/Excel de prueba generados"""
-    return send_from_directory(SAMPLE_DIR, filename, as_attachment=True)
+    return send_file(output, as_attachment=True, download_name='plantilla_movimientos_bancarios.xlsx', mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
 if __name__ == '__main__':
-    print("=" * 70)
-    print("  CREDITSENSE - MODULO DE EVALUACION CREDITICIA BANCARIA (6 MESES)")
+    print("=" * 72)
+    print("  CREDITSENSE - PLATAFORMA DE EVALUACION CREDITICIA MULTI-BANCO")
     print("  Iniciando servidor local en http://127.0.0.1:5000 ...")
-    print("=" * 70)
+    print("=" * 72)
     app.run(host='127.0.0.1', port=5000, debug=True)

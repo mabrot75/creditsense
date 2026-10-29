@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CreditSense | Portal Principal de Gestión Crediticia</title>
+  
+  <link rel="stylesheet" href="/static/css/style.css">
+  
+  <style>
+    :root {
+      --primary-dark: #0a1128;
+      --accent-sky: #0284c7;
+      --accent-sky-hover: #0369a1;
+      --accent-indigo: #4f46e5;
+      --bg-page: #f8fafc;
+      --border-card: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    body {
+      background: var(--bg-page);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    }
+    .nav-bar {
+      background: var(--primary-dark); color: #fff; padding: 0 24px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50;
+      border-bottom: 1px solid rgba(255,255,255,0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .nav-links {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nav-link {
+      color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 14px;
+      border-radius: 8px; transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .nav-link.active { color: #fff; background: rgba(2,132,199,0.3); border: 1px solid rgba(56,189,248,0.4); }
+
+    .hero-banner {
+      background: linear-gradient(135deg, #0a1128 0%, #1c2541 60%, #0369a1 100%);
+      color: #fff; padding: 48px 24px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .hero-container { max-width: 900px; margin: 0 auto; }
+    .hero-title { font-size: 32px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 12px; }
+    .hero-subtitle { font-size: 15px; color: #bae6fd; max-width: 720px; margin: 0 auto 24px auto; line-height: 1.6; }
+
+    .main-grid-container {
+      max-width: 1200px; margin: -30px auto 40px auto; padding: 0 20px; width: 100%;
+    }
+    .modules-grid {
+      display: grid; grid-template-columns: 1fr; gap: 24px;
+    }
+    @media (min-width: 860px) {
+      .modules-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .module-card {
+      background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--border-card);
+      padding: 32px 24px; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.08); display: flex;
+      flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .module-card:hover {
+      transform: translateY(-4px); box-shadow: 0 15px 30px -5px rgba(2,132,199,0.15);
+      border-color: #7dd3fc;
+    }
+    .module-badge {
+      display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 999px; margin-bottom: 16px; width: fit-content;
+    }
+    .badge-blue { background: #e0f2fe; color: #0369a1; }
+    .badge-emerald { background: #ecfdf5; color: #047857; }
+    .badge-purple { background: #f5f3ff; color: #6d28d9; }
+
+    .module-icon-box {
+      width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px; color: #fff; font-size: 24px;
+    }
+    .icon-box-blue { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); }
+    .icon-box-emerald { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+    .icon-box-purple { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); }
+
+    .module-title { font-size: 19px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+    .module-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
+
+    .btn-module {
+      width: 100%; padding: 12px; font-size: 13px; font-weight: 700; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .btn-blue { background: #0284c7; color: #fff; }
+    .btn-blue:hover { background: #0369a1; }
+    .btn-emerald { background: #10b981; color: #fff; }
+    .btn-emerald:hover { background: #059669; }
+    .btn-purple { background: #4f46e5; color: #fff; }
+    .btn-purple:hover { background: #4338ca; }
+
+    .recent-section {
+      background: #fff; border: 1px solid var(--border-card); border-radius: var(--radius-lg);
+      padding: 24px; margin-top: 30px; box-shadow: var(--shadow-sm);
+    }
+    .recent-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="nav-bar">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, #0284c7 0%, #4f46e5 100%); display:flex; align-items:center; justify-content:center; color:#fff;">
+        <span data-icon="shield-check" style="width:22px; height:22px;"></span>
+      </div>
+      <div>
+        <span style="font-size:19px; font-weight:800; color:#fff;">CreditSense</span>
+        <span style="font-size:11px; background:rgba(2,132,199,0.25); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:999px; margin-left:8px; font-weight:600;">
+          Plataforma Financiera
+        </span>
+      </div>
+    </div>
+
+    <!-- Menú Principal -->
+    <nav class="nav-links">
+      <a href="/" class="nav-link active">
+        <span data-icon="shield-check" style="width:15px; height:15px;"></span> Inicio
+      </a>
+      <a href="/clientes" class="nav-link">
+        <span data-icon="users" style="width:15px; height:15px;"></span> 1. Clientes
+      </a>
+      <a href="/carga-movimientos" class="nav-link">
+        <span data-icon="upload-cloud" style="width:15px; height:15px;"></span> 2. Carga de Movimientos
+      </a>
+      <a href="/simulador" class="nav-link">
+        <span data-icon="calculator" style="width:15px; height:15px;"></span> 3. Simulador
+      </a>
+    </nav>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero-banner">
+    <div class="hero-container">
+      <h1 class="hero-title">Módulo Integral de Consulta y Scoring Crediticio</h1>
+      <p class="hero-subtitle">
+        Audita el comportamiento financiero de los clientes en sus últimos 6 meses, consolida movimientos de múltiples entidades bancarias y simula créditos y líneas de tarjeta con capacidad de pago real.
+      </p>
+    </div>
+  </section>
+
+  <!-- MAIN MODULES GRID -->
+  <main class="main-grid-container">
+    <div class="modules-grid">
+      
+      <!-- MODULO 1: CLIENTES -->
+      <div class="module-card">
+        <div>
+          <span class="module-badge badge-blue">Módulo 1</span>
+          <div class="module-icon-box icon-box-blue">
+            <span data-icon="users" style="width:28px; height:28px;"></span>
+          </div>
+          <h2 class="module-title">Gestión de Clientes</h2>
+          <p class="module-desc">
+            Administra tu cartera de candidatos crediticios. Registra clientes nuevos desde cero, edita sus datos personales y laborales en cualquier momento, o elimina clientes de la base de datos SQLite.
+          </p>
+        </div>
+
+        <a href="/clientes" class="btn-module btn-blue">
+          <span data-icon="users" style="width:16px; height:16px;"></span>
+          Ir a Clientes →
+        </a>
+      </div>
+
+      <!-- MODULO 2: CARGA DE MOVIMIENTOS -->
+      <div class="module-card">
+        <div>
+          <span class="module-badge badge-emerald">Módulo 2</span>
+          <div class="module-icon-box icon-box-emerald">
+            <span data-icon="upload-cloud" style="width:28px; height:28px;"></span>
+          </div>
+          <h2 class="module-title">Carga de Movimientos</h2>
+          <p class="module-desc">
+            Importa estados de cuenta en Excel (.xlsx) o CSV. Permite <strong>acumular y consolidar</strong> ingresos, egresos y saldos provenientes de múltiples bancos y cuentas para un mismo cliente.
+          </p>
+        </div>
+
+        <a href="/carga-movimientos" class="btn-module btn-emerald">
+          <span data-icon="upload-cloud" style="width:16px; height:16px;"></span>
+          Cargar Movimientos →
+        </a>
+      </div>
+
+      <!-- MODULO 3: SIMULADOR -->
+      <div class="module-card">
+        <div>
+          <span class="module-badge badge-purple">Módulo 3</span>
+          <div class="module-icon-box icon-box-purple">
+            <span data-icon="calculator" style="width:28px; height:28px;"></span>
+          </div>
+          <h2 class="module-title">Simulador y Dictamen</h2>
+          <p class="module-desc">
+            Consulta el desglose analítico de los 6 meses: cálculo del Score FICO (300 a 850), tarjeta pre-aprobada, simulador interactivo de préstamo a cuota fija y resolución formal del comité.
+          </p>
+        </div>
+
+        <a href="/simulador" class="btn-module btn-purple">
+          <span data-icon="calculator" style="width:16px; height:16px;"></span>
+          Abrir Simulador →
+        </a>
+      </div>
+
+    </div>
+
+    <!-- CLIENTES RECIENTES EN BASE DE DATOS -->
+    <div class="recent-section">
+      <div class="recent-header">
+        <div>
+          <h3 style="font-size:16px; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+            <span data-icon="table" style="width:18px; height:18px; color:var(--accent-sky);"></span>
+            Clientes Activos en Base de Datos (SQLite)
+          </h3>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+            Selecciona un cliente para ver su estado actual o realizar acciones directas.
+          </p>
+        </div>
+        <a href="/clientes" style="font-size:12px; font-weight:700; color:var(--accent-sky); text-decoration:none;">
+          Ver todos los clientes →
+        </a>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="modern-table" style="font-size:12px;">
+          <thead>
+            <tr>
+              <th>Candidato</th>
+              <th>RUT / DNI</th>
+              <th>Cargo / Ocupación</th>
+              <th>Entidades Bancarias</th>
+              <th class="text-center">Transacciones</th>
+              <th class="text-right">Acciones Rápidas</th>
+            </tr>
+          </thead>
+          <tbody id="quickClientsTable">
+            {% for c in candidates %}
+            <tr>
+              <td style="font-weight:700;">
+                {{ c.client_info.nombre }}
+                {% if c.client_info.es_personalizado %}
+                  <span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; margin-left:4px;">Nuevo</span>
+                {% endif %}
+              </td>
+              <td style="font-family:monospace; color:#64748b;">{{ c.client_info.rut_dni }}</td>
+              <td style="color:#475569;">{{ c.client_info.ocupacion }}</td>
+              <td>
+                {% for b in c.client_info.bancos %}
+                  <span style="font-size:10px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; margin-right:4px;">{{ b }}</span>
+                {% endfor %}
+              </td>
+              <td class="text-center" style="font-weight:700; color:#0284c7;">{{ c.total_transacciones }}</td>
+              <td class="text-right">
+                <a href="/carga-movimientos?client_id={{ c.client_info.id }}" style="font-size:11px; padding:4px 8px; border-radius:6px; background:#ecfdf5; color:#065f46; font-weight:700; text-decoration:none; margin-right:4px;">
+                  + Cargar Banco
+                </a>
+                <a href="/simulador?client={{ c.perfil_key }}" style="font-size:11px; padding:4px 8px; border-radius:6px; background:#e0f2fe; color:#0369a1; font-weight:700; text-decoration:none;">
+                  Simular →
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer style="background:#fff; border-top:1px solid #e2e8f0; padding:18px; text-align:center; font-size:12px; color:#64748b; margin-top:auto;">
+    CreditSense • Plataforma Bancaria de Consulta y Scoring Crediticio • 100% Offline y Seguro
+  </footer>
+
+  <script src="/static/js/icons.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAllIcons();
+    });
+  </script>
+</body>
+</html>

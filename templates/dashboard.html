@@ -352,24 +352,34 @@
   <header class="top-header no-print">
     <div class="header-inner">
       <div class="brand-wrapper">
-        <div class="brand-icon-box">
-          <span data-icon="shield-check" style="width:24px; height:24px;"></span>
-        </div>
-        <div>
-          <span class="brand-title">CreditSense</span>
-          <span class="brand-tag">Motor de Crédito Offline v2.5</span>
-        </div>
+        <a href="/" style="text-decoration:none; display:flex; align-items:center; gap:12px;">
+          <div class="brand-icon-box">
+            <span data-icon="shield-check" style="width:24px; height:24px;"></span>
+          </div>
+          <div>
+            <span class="brand-title">CreditSense</span>
+            <span class="brand-tag">Simulador v2.5</span>
+          </div>
+        </a>
       </div>
 
-      <div class="header-actions">
-        <a href="/nuevo-cliente" target="_blank" class="btn btn-primary" style="background:#0284c7; box-shadow:0 2px 8px rgba(2,132,199,0.35);">
-          <span data-icon="users" style="width:16px; height:16px;"></span>
-          + Registrar Nuevo Cliente
+      <!-- Menú de Navegación Unificado -->
+      <nav class="nav-links" style="display:flex; align-items:center; gap:6px;">
+        <a href="/" style="color:#cbd5e1; text-decoration:none; font-size:12px; font-weight:600; padding:6px 12px; border-radius:6px; transition:all 0.15s; display:flex; align-items:center; gap:4px;">
+          <span data-icon="shield-check" style="width:14px; height:14px;"></span> Inicio
         </a>
-        <button onclick="openUploadModal()" class="btn btn-header-upload">
-          <span data-icon="upload-cloud" style="width:16px; height:16px;"></span>
-          Importar CSV / Excel
-        </button>
+        <a href="/clientes" style="color:#cbd5e1; text-decoration:none; font-size:12px; font-weight:600; padding:6px 12px; border-radius:6px; transition:all 0.15s; display:flex; align-items:center; gap:4px;">
+          <span data-icon="users" style="width:14px; height:14px;"></span> 1. Clientes
+        </a>
+        <a href="/carga-movimientos" style="color:#cbd5e1; text-decoration:none; font-size:12px; font-weight:600; padding:6px 12px; border-radius:6px; transition:all 0.15s; display:flex; align-items:center; gap:4px;">
+          <span data-icon="upload-cloud" style="width:14px; height:14px;"></span> 2. Carga Movimientos
+        </a>
+        <a href="/simulador" style="color:#fff; background:rgba(2,132,199,0.3); border:1px solid rgba(56,189,248,0.4); text-decoration:none; font-size:12px; font-weight:700; padding:6px 12px; border-radius:6px; display:flex; align-items:center; gap:4px;">
+          <span data-icon="calculator" style="width:14px; height:14px;"></span> 3. Simulador
+        </a>
+      </nav>
+
+      <div class="header-actions">
         <button onclick="window.print()" class="btn btn-header-print">
           <span data-icon="printer" style="width:16px; height:16px;"></span>
           Imprimir Dictamen
