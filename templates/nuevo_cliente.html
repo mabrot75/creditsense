@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrar Nuevo Candidato | CreditSense</title>
+  
+  <link rel="stylesheet" href="/static/css/style.css">
+  
+  <style>
+    :root {
+      --primary-dark: #0a1128;
+      --accent-sky: #0284c7;
+      --accent-sky-hover: #0369a1;
+      --accent-indigo: #4f46e5;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --border-card: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    body {
+      background: var(--bg-page);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column;
+    }
+    .top-header {
+      background: var(--primary-dark); color: #fff; padding: 0 20px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .form-container {
+      max-width: 1080px; margin: 28px auto; padding: 0 20px; width: 100%; display: flex; flex-direction: column; gap: 24px;
+    }
+    .card {
+      background: #fff; border: 1px solid var(--border-card); border-radius: var(--radius-lg);
+      padding: 24px; box-shadow: var(--shadow-sm);
+    }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;
+      border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;
+    }
+    .section-title {
+      font-size: 16px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px;
+    }
+    .grid-2 {
+      display: grid; grid-template-columns: 1fr; gap: 16px;
+    }
+    @media (min-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+    }
+    .grid-3 {
+      display: grid; grid-template-columns: 1fr; gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .form-group {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    label {
+      font-size: 12px; font-weight: 700; color: var(--text-main);
+    }
+    .input-field, select {
+      font-family: inherit; font-size: 13px; padding: 9px 12px; border: 1px solid #cbd5e1;
+      border-radius: var(--radius-sm); outline: none; background: #fff; color: var(--text-main);
+      transition: border-color 0.15s;
+    }
+    .input-field:focus, select:focus {
+      border-color: var(--accent-sky); ring: 2px rgba(2,132,199,0.2);
+    }
+    .table-input {
+      width: 100%; font-size: 12px; padding: 6px 8px; border: 1px solid #cbd5e1;
+      border-radius: 6px; text-align: right; font-weight: 600; outline: none;
+    }
+    .table-input:focus { border-color: var(--accent-sky); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 20px; font-size: 13px; font-weight: 700; border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.15s; border: 1px solid transparent; text-decoration: none;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--accent-sky); color: #fff; }
+    .btn-primary:hover { background: var(--accent-sky-hover); }
+    .btn-outline { background: #fff; color: var(--text-main); border-color: #cbd5e1; }
+    .btn-outline:hover { background: #f8fafc; }
+    .btn-preset {
+      font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid #cbd5e1;
+      background: #f8fafc; color: var(--text-muted); cursor: pointer; font-weight: 600;
+    }
+    .btn-preset:hover { background: #e0f2fe; color: #0284c7; border-color: #7dd3fc; }
+    .kpi-bar {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+      background: #f8fafc; border: 1px solid var(--border-card); border-radius: var(--radius-md);
+      padding: 14px; margin-top: 16px;
+    }
+    @media (min-width: 640px) {
+      .kpi-bar { grid-template-columns: repeat(4, 1fr); }
+    }
+    .kpi-item { text-align: center; }
+    .kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+    .kpi-val { font-size: 18px; font-weight: 800; color: var(--text-main); margin-top: 2px; }
+
+    /* Modal de confirmación */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: auto; }
+    .modal-box {
+      background: #fff; border-radius: var(--radius-lg); max-width: 480px; width: 100%;
+      padding: 28px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="top-header">
+    <div style="max-width: 1080px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #0284c7 0%, #4f46e5 100%); display:flex; align-items:center; justify-content:center; color:#fff;">
+          <span data-icon="shield-check" style="width:20px; height:20px;"></span>
+        </div>
+        <div>
+          <span style="font-size:18px; font-weight:800; color:#fff;">CreditSense</span>
+          <span style="font-size:11px; background:rgba(2,132,199,0.3); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:999px; margin-left:8px; font-weight:600;">
+            Alta de Nuevo Cliente
+          </span>
+        </div>
+      </div>
+
+      <a href="/" class="btn btn-outline" style="color:#fff; background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.2); font-size:12px; padding:6px 14px;">
+        ← Volver al Dashboard
+      </a>
+    </div>
+  </header>
+
+  <!-- FORM CONTAINER -->
+  <main class="form-container">
+    
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;">
+      <div>
+        <h1 style="font-size:22px; font-weight:900; color:var(--text-main);">Registro de Candidato Crediticio</h1>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:2px;">
+          Ingresa los datos personales y el historial de movimientos de los últimos 6 meses para evaluar scoring bancario.
+        </p>
+      </div>
+
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <span style="font-size:11px; font-weight:700; color:var(--text-muted); align-self:center; margin-right:4px;">Plantillas rápidas:</span>
+        <button type="button" onclick="loadPreset('excelente')" class="btn-preset">🌟 Perfil Solvente (A+)</button>
+        <button type="button" onclick="loadPreset('medio')" class="btn-preset">⚖️ Perfil Medio / Freelance</button>
+        <button type="button" onclick="loadPreset('endeudado')" class="btn-preset">⚠️ Perfil Sobreendeudado</button>
+      </div>
+    </div>
+
+    <form id="newClientForm" onsubmit="handleSaveClient(event)" style="display:flex; flex-direction:column; gap:24px;">
+      
+      <!-- CARD 1: DATOS PERSONALES Y LABORALES -->
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">
+            <span data-icon="users" style="width:18px; height:18px; color:var(--accent-sky);"></span>
+            1. Información Personal y Laboral del Candidato
+          </span>
+          <span style="font-size:11px; font-weight:600; color:var(--text-muted);">Campos requeridos (*)</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="nombre">Nombre Completo *</label>
+            <input type="text" id="nombre" name="nombre" class="input-field" placeholder="Ej. Valeria Sofía Rivas" required>
+          </div>
+
+          <div class="form-group">
+            <label for="rut_dni">RUT / DNI / Identificación Fiscal *</label>
+            <input type="text" id="rut_dni" name="rut_dni" class="input-field" placeholder="Ej. 18.940.123-5" required>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top:16px;">
+          <div class="form-group">
+            <label for="ocupacion">Ocupación / Cargo Laboral *</label>
+            <input type="text" id="ocupacion" name="ocupacion" class="input-field" placeholder="Ej. Jefa de Proyectos TI" required>
+          </div>
+
+          <div class="form-group">
+            <label for="empresa">Empresa / Empleador</label>
+            <input type="text" id="empresa" name="empresa" class="input-field" placeholder="Ej. Soluciones Cloud Latam">
+          </div>
+
+          <div class="form-group">
+            <label for="tipo_contrato">Tipo de Contrato</label>
+            <select id="tipo_contrato" name="tipo_contrato">
+              <option value="Indefinido" selected>Contrato Indefinido</option>
+              <option value="Plazo Fijo">Plazo Fijo</option>
+              <option value="Honorarios / Independiente">Honorarios / Independiente</option>
+              <option value="Empresario / Dueño">Empresario / Dueño de Negocio</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top:16px;">
+          <div class="form-group">
+            <label for="antiguedad_laboral">Antigüedad Laboral (Años)</label>
+            <input type="number" id="antiguedad_laboral" name="antiguedad_laboral" class="input-field" step="0.5" min="0" value="3.5">
+          </div>
+
+          <div class="form-group">
+            <label for="antiguedad_bancaria">Antigüedad en la Cuenta (Meses)</label>
+            <input type="number" id="antiguedad_bancaria" name="antiguedad_bancaria" class="input-field" min="6" value="24">
+          </div>
+
+          <div class="form-group">
+            <label for="avatar_select">Foto / Avatar del Cliente</label>
+            <select id="avatar_select" onchange="updateAvatarPreview(this.value)">
+              <option value="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80">Avatar Femenino Profesional 1</option>
+              <option value="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80">Avatar Femenino Profesional 2</option>
+              <option value="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80">Avatar Masculino Profesional 1</option>
+              <option value="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80">Avatar Masculino Profesional 2</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: CONSOLIDADO DE MOVIMIENTOS EN LOS ÚLTIMOS 6 MESES -->
+      <div class="card">
+        <div class="section-header">
+          <div>
+            <span class="section-title">
+              <span data-icon="bar-chart" style="width:18px; height:18px; color:var(--accent-indigo);"></span>
+              2. Movimientos Financieros de los Últimos 6 Meses
+            </span>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+              Ingresa los montos totales de cada mes. El sistema reconstruirá y auditará automáticamente el flujo de caja.
+            </p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label for="saldo_inicial" style="font-size:11px;">Saldo Inicial Cuenta ($):</label>
+            <input type="number" id="saldo_inicial" class="table-input" style="width:110px;" value="1800" step="50" onchange="recalculateKPIs()">
+          </div>
+        </div>
+
+        <!-- Tabla mensual -->
+        <div style="overflow-x:auto;">
+          <table class="modern-table" style="font-size:12px; border:1px solid #e2e8f0; border-radius:8px;">
+            <thead>
+              <tr>
+                <th style="width:140px;">Mes / Periodo</th>
+                <th class="text-right" style="width:150px;">Total Ingresos ($) *</th>
+                <th class="text-right" style="width:150px;">Total Egresos ($) *</th>
+                <th class="text-right" style="width:150px;">Pago Deudas / Cuotas ($)</th>
+                <th class="text-center" style="width:110px;">Sobregiros</th>
+                <th class="text-right" style="width:130px;">Flujo Neto Est.</th>
+              </tr>
+            </thead>
+            <tbody id="monthsTableBody">
+              <!-- Generado dinámicamente con los 6 meses -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Resumen de Métricas Proyectadas en Tiempo Real -->
+        <div class="kpi-bar">
+          <div class="kpi-item">
+            <span class="kpi-label">Ingreso Promedio</span>
+            <div id="kpiIngreso" class="kpi-val" style="color:#0284c7;">$0.00</div>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-label">Egreso Promedio</span>
+            <div id="kpiEgreso" class="kpi-val" style="color:#64748b;">$0.00</div>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-label">Flujo Neto Promedio</span>
+            <div id="kpiFlujo" class="kpi-val" style="color:#059669;">$0.00</div>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-label">Tasa de Ahorro / DTI</span>
+            <div id="kpiTasa" class="kpi-val" style="color:#4f46e5;">0% / 0%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTONES DE ACCIÓN -->
+      <div style="display:flex; justify-content:flex-end; align-items:center; gap:12px; margin-bottom:40px;">
+        <a href="/" class="btn btn-outline" style="padding:10px 24px;">Cancelar</a>
+        <button type="submit" id="btnSubmit" class="btn btn-primary" style="padding:11px 32px; font-size:14px; box-shadow:0 4px 12px rgba(2,132,199,0.3);">
+          <span data-icon="shield-check" style="width:18px; height:18px;"></span>
+          Guardar y Evaluar en Base de Datos
+        </button>
+      </div>
+
+    </form>
+  </main>
+
+  <!-- MODAL DE ÉXITO -->
+  <div id="successModal" class="modal-backdrop">
+    <div class="modal-box">
+      <div style="width:60px; height:60px; border-radius:50%; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto;">
+        <span data-icon="check-circle" style="width:36px; height:36px;"></span>
+      </div>
+      <h2 style="font-size:20px; font-weight:800; color:var(--text-main);">¡Cliente Registrado con Éxito!</h2>
+      <p id="successMessage" style="font-size:13px; color:var(--text-muted); margin: 8px 0 24px 0;">
+        El cliente y sus movimientos de los 6 meses han sido almacenados de forma segura en la base de datos de CreditSense.
+      </p>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button type="button" id="btnGoToAnalysis" class="btn btn-primary" style="width:100%; padding:12px;">
+          Ver Análisis Crediticio de este Cliente →
+        </button>
+        <button type="button" onclick="resetFormForNewClient()" class="btn btn-outline" style="width:100%; padding:10px;">
+          Registrar Otro Cliente
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/icons.js"></script>
+  <script>
+    // Meses a configurar (Mayo 2026 a Octubre 2026)
+    const PERIODOS_CONFIG = [
+      { key: '2026-05', nombre: 'Mayo 2026' },
+      { key: '2026-06', nombre: 'Junio 2026' },
+      { key: '2026-07', nombre: 'Julio 2026' },
+      { key: '2026-08', nombre: 'Agosto 2026' },
+      { key: '2026-09', nombre: 'Septiembre 2026' },
+      { key: '2026-10', nombre: 'Octubre 2026' }
+    ];
+
+    let createdClientKey = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      buildMonthsTable();
+      renderAllIcons();
+      // Cargar preset excelente por defecto para facilitar prueba
+      loadPreset('excelente');
+    });
+
+    function buildMonthsTable() {
+      const tbody = document.getElementById('monthsTableBody');
+      tbody.innerHTML = '';
+
+      PERIODOS_CONFIG.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:700; color:var(--text-main);">
+            ${p.nombre}
+            <input type="hidden" class="row-periodo" value="${p.key}">
+          </td>
+          <td>
+            <input type="number" class="table-input row-ingreso" value="2500" step="50" min="0" oninput="recalculateKPIs()" required>
+          </td>
+          <td>
+            <input type="number" class="table-input row-egreso" value="1800" step="50" min="0" oninput="recalculateKPIs()" required>
+          </td>
+          <td>
+            <input type="number" class="table-input row-deuda" value="200" step="10" min="0" oninput="recalculateKPIs()">
+          </td>
+          <td class="text-center">
+            <select class="table-input row-sobregiro" style="width:70px; text-align:center;" onchange="recalculateKPIs()">
+              <option value="0" selected>0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3+</option>
+            </select>
+          </td>
+          <td class="text-right" style="font-weight:700;">
+            <span class="row-flujo-neto" style="color:#059669;">$700.00</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      recalculateKPIs();
+    }
+
+    function recalculateKPIs() {
+      const ingresos = Array.from(document.querySelectorAll('.row-ingreso')).map(i => parseFloat(i.value) || 0);
+      const egresos = Array.from(document.querySelectorAll('.row-egreso')).map(i => parseFloat(i.value) || 0);
+      const deudas = Array.from(document.querySelectorAll('.row-deuda')).map(i => parseFloat(i.value) || 0);
+      const flujoSpans = document.querySelectorAll('.row-flujo-neto');
+
+      let sumIngresos = 0, sumEgresos = 0, sumDeudas = 0;
+
+      ingresos.forEach((ing, i) => {
+        const eg = egresos[i] || 0;
+        const fl = ing - eg;
+        sumIngresos += ing;
+        sumEgresos += eg;
+        sumDeudas += deudas[i] || 0;
+
+        flujoSpans[i].innerText = (fl >= 0 ? '+$' : '-$') + Math.abs(fl).toLocaleString('en-US', {minimumFractionDigits: 2});
+        flujoSpans[i].style.color = fl >= 0 ? '#059669' : '#e11d48';
+      });
+
+      const count = ingresos.length || 1;
+      const promIng = sumIngresos / count;
+      const promEg = sumEgresos / count;
+      const promFl = promIng - promEg;
+      const tasaAhorro = promIng > 0 ? (promFl / promIng * 100).toFixed(1) : '0';
+      const dti = promIng > 0 ? ((sumDeudas / count) / promIng * 100).toFixed(1) : '0';
+
+      document.getElementById('kpiIngreso').innerText = '$' + promIng.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('kpiEgreso').innerText = '$' + promEg.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('kpiFlujo').innerText = (promFl >= 0 ? '+$' : '-$') + Math.abs(promFl).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('kpiFlujo').style.color = promFl >= 0 ? '#059669' : '#e11d48';
+      document.getElementById('kpiTasa').innerText = `${tasaAhorro}% / ${dti}%`;
+    }
+
+    function loadPreset(tipo) {
+      if (tipo === 'excelente') {
+        document.getElementById('nombre').value = "Valeria Sofía Rivas";
+        document.getElementById('rut_dni').value = "18.940.123-5";
+        document.getElementById('ocupacion').value = "Jefa de Proyectos TI";
+        document.getElementById('empresa').value = "Soluciones Cloud Latam";
+        document.getElementById('tipo_contrato').value = "Indefinido";
+        document.getElementById('antiguedad_laboral').value = "4.0";
+        document.getElementById('antiguedad_bancaria').value = "36";
+        document.getElementById('saldo_inicial').value = "3500";
+
+        const ingInputs = document.querySelectorAll('.row-ingreso');
+        const egInputs = document.querySelectorAll('.row-egreso');
+        const dInputs = document.querySelectorAll('.row-deuda');
+        const sgSelects = document.querySelectorAll('.row-sobregiro');
+
+        const valoresIng = [3800, 3800, 4200, 3850, 3900, 4100];
+        const valoresEg = [2200, 2150, 2400, 2200, 2100, 2300];
+        const valoresDeuda = [250, 250, 250, 250, 250, 250];
+
+        ingInputs.forEach((inp, idx) => {
+          inp.value = valoresIng[idx];
+          egInputs[idx].value = valoresEg[idx];
+          dInputs[idx].value = valoresDeuda[idx];
+          sgSelects[idx].value = "0";
+        });
+      } else if (tipo === 'medio') {
+        document.getElementById('nombre').value = "Esteban Castro Beltrán";
+        document.getElementById('rut_dni').value = "17.432.901-K";
+        document.getElementById('ocupacion').value = "Consultor Comercial Freelance";
+        document.getElementById('empresa').value = "Independiente / Honorarios";
+        document.getElementById('tipo_contrato').value = "Honorarios / Independiente";
+        document.getElementById('antiguedad_laboral').value = "2.0";
+        document.getElementById('antiguedad_bancaria').value = "18";
+        document.getElementById('saldo_inicial').value = "1200";
+
+        const ingInputs = document.querySelectorAll('.row-ingreso');
+        const egInputs = document.querySelectorAll('.row-egreso');
+        const dInputs = document.querySelectorAll('.row-deuda');
+        const sgSelects = document.querySelectorAll('.row-sobregiro');
+
+        const valoresIng = [1900, 2800, 1400, 2500, 1600, 2400];
+        const valoresEg = [1600, 1750, 1500, 1800, 1550, 1700];
+        const valoresDeuda = [180, 180, 180, 180, 180, 180];
+
+        ingInputs.forEach((inp, idx) => {
+          inp.value = valoresIng[idx];
+          egInputs[idx].value = valoresEg[idx];
+          dInputs[idx].value = valoresDeuda[idx];
+          sgSelects[idx].value = "0";
+        });
+      } else {
+        document.getElementById('nombre').value = "Marcos Salgado Pino";
+        document.getElementById('rut_dni').value = "19.123.456-7";
+        document.getElementById('ocupacion').value = "Asesor de Ventas";
+        document.getElementById('empresa').value = "Comercializadora Metropolitana";
+        document.getElementById('tipo_contrato').value = "Plazo Fijo";
+        document.getElementById('antiguedad_laboral').value = "1.0";
+        document.getElementById('antiguedad_bancaria').value = "12";
+        document.getElementById('saldo_inicial').value = "400";
+
+        const ingInputs = document.querySelectorAll('.row-ingreso');
+        const egInputs = document.querySelectorAll('.row-egreso');
+        const dInputs = document.querySelectorAll('.row-deuda');
+        const sgSelects = document.querySelectorAll('.row-sobregiro');
+
+        const valoresIng = [1600, 1600, 1600, 1400, 1500, 1450];
+        const valoresEg = [1550, 1700, 1650, 1600, 1750, 1600];
+        const valoresDeuda = [750, 750, 750, 750, 750, 750]; // DTI alto > 48%
+
+        ingInputs.forEach((inp, idx) => {
+          inp.value = valoresIng[idx];
+          egInputs[idx].value = valoresEg[idx];
+          dInputs[idx].value = valoresDeuda[idx];
+          sgSelects[idx].value = idx === 1 || idx === 4 ? "1" : "0";
+        });
+      }
+      recalculateKPIs();
+    }
+
+    async function handleSaveClient(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.innerHTML = `<span style="display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px;"></span> Guardando...`;
+
+      const clientInfo = {
+        nombre: document.getElementById('nombre').value.trim(),
+        rut_dni: document.getElementById('rut_dni').value.trim(),
+        ocupacion: document.getElementById('ocupacion').value.trim(),
+        empresa: document.getElementById('empresa').value.trim() || 'No especificada',
+        tipo_contrato: document.getElementById('tipo_contrato').value,
+        antiguedad_laboral_anios: parseFloat(document.getElementById('antiguedad_laboral').value) || 1.0,
+        antiguedad_bancaria_meses: parseInt(document.getElementById('antiguedad_bancaria').value) || 12,
+        avatar: document.getElementById('avatar_select').value,
+        etiqueta_perfil: 'Cliente Creado Manualmente'
+      };
+
+      const monthlyData = [];
+      const periodos = document.querySelectorAll('.row-periodo');
+      const ingresos = document.querySelectorAll('.row-ingreso');
+      const egresos = document.querySelectorAll('.row-egreso');
+      const deudas = document.querySelectorAll('.row-deuda');
+      const sobregiros = document.querySelectorAll('.row-sobregiro');
+
+      periodos.forEach((p, idx) => {
+        monthlyData.push({
+          periodo: p.value,
+          ingresos: parseFloat(ingresos[idx].value) || 0.0,
+          egresos: parseFloat(egresos[idx].value) || 0.0,
+          pagos_deuda: parseFloat(deudas[idx].value) || 0.0,
+          sobregiros: parseInt(sobregiros[idx].value) || 0
+        });
+      });
+
+      const payload = {
+        client_info: clientInfo,
+        monthly_data: monthlyData,
+        saldo_inicial: parseFloat(document.getElementById('saldo_inicial').value) || 1000.0
+      };
+
+      try {
+        const resp = await fetch('/api/save-client', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await resp.json();
+
+        if (result.success) {
+          createdClientKey = result.perfil_key;
+          document.getElementById('successMessage').innerText = `El candidato ${clientInfo.nombre} ha sido guardado exitosamente en SQLite con ${result.total_transacciones} transacciones de 6 meses generadas.`;
+          
+          document.getElementById('btnGoToAnalysis').onclick = () => {
+            window.location.href = `/?client=${createdClientKey}`;
+          };
+
+          document.getElementById('successModal').classList.add('open');
+        } else {
+          alert("Error al guardar: " + (result.error || "Ocurrió un problema."));
+        }
+      } catch (err) {
+        console.error("Error saving client:", err);
+        alert("Error de conexión al guardar el cliente.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span data-icon="shield-check" style="width:18px; height:18px;"></span> Guardar y Evaluar en Base de Datos`;
+        renderAllIcons();
+      }
+    }
+
+    function resetFormForNewClient() {
+      document.getElementById('successModal').classList.remove('open');
+      document.getElementById('newClientForm').reset();
+      buildMonthsTable();
+    }
+  </script>
+</body>
+</html>

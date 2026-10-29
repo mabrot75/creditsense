@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CreditSense | Módulo de Evaluación Crediticia Bancaria</title>
+  
+  <!-- Enlace a estilos locales -->
+  <link rel="stylesheet" href="/static/css/style.css">
+  
+  <!-- Estilos embebidos directos para garantizar carga 100% inmediata sin fallos de CDN -->
+  <style>
+    :root {
+      --primary-dark: #0a1128;
+      --primary-navy: #1c2541;
+      --accent-sky: #0284c7;
+      --accent-sky-hover: #0369a1;
+      --accent-sky-light: #e0f2fe;
+      --accent-indigo: #4f46e5;
+      --accent-indigo-light: #eef2ff;
+      --success-bg: #ecfdf5;
+      --success-border: #a7f3d0;
+      --success-text: #065f46;
+      --success-solid: #10b981;
+      --warning-bg: #fffbeb;
+      --warning-border: #fde68a;
+      --warning-text: #92400e;
+      --warning-solid: #f59e0b;
+      --danger-bg: #fff1f2;
+      --danger-border: #fecdd3;
+      --danger-text: #9f1239;
+      --danger-solid: #f43f5e;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --border-card: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-header {
+      background: var(--primary-dark);
+      color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 20px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-wrapper { display: flex; align-items: center; gap: 12px; }
+    .brand-icon-box {
+      width: 40px; height: 40px; border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; box-shadow: 0 4px 10px rgba(2,132,199,0.3);
+    }
+    .brand-title {
+      font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #fff 0%, #bae6fd 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .brand-tag {
+      font-size: 11px; background: rgba(2,132,199,0.2); color: #38bdf8;
+      border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px;
+      border-radius: var(--radius-full); margin-left: 8px; font-weight: 600;
+    }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.2s; border: 1px solid transparent; font-family: inherit;
+    }
+    .btn-header-upload {
+      background: rgba(2,132,199,0.2); color: #bae6fd; border: 1px solid rgba(2,132,199,0.4);
+    }
+    .btn-header-upload:hover { background: rgba(2,132,199,0.35); color: #fff; }
+    .btn-header-print {
+      background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15);
+    }
+    .btn-header-print:hover { background: rgba(255,255,255,0.18); color: #fff; }
+
+    .candidate-bar {
+      background: #ffffff; border-bottom: 1px solid var(--border-card); padding: 12px 0; box-shadow: var(--shadow-sm);
+    }
+    .candidate-bar-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 20px;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .candidate-bar-label {
+      display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-muted);
+    }
+    .candidate-buttons-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .candidate-pill {
+      padding: 6px 14px; font-size: 12px; font-weight: 600; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-card); background: #fff; color: var(--text-muted);
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .candidate-pill:hover { background: var(--bg-page); color: var(--text-main); }
+    .candidate-pill.active {
+      background: var(--accent-sky-light); border-color: #7dd3fc; color: var(--accent-sky-hover);
+      box-shadow: 0 1px 3px rgba(2,132,199,0.15);
+    }
+
+    .main-container {
+      max-width: 1280px; margin: 0 auto; padding: 24px 20px; width: 100%;
+      flex: 1; display: flex; flex-direction: column; gap: 24px;
+    }
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm);
+    }
+
+    .profile-banner { display: flex; flex-direction: column; gap: 20px; }
+    @media (min-width: 900px) {
+      .profile-banner { flex-direction: row; align-items: center; justify-content: space-between; }
+    }
+    .profile-left { display: flex; align-items: center; gap: 16px; }
+    .profile-avatar {
+      width: 64px; height: 64px; border-radius: var(--radius-full); object-fit: cover;
+      border: 3px solid var(--border-subtle); box-shadow: var(--shadow-sm);
+    }
+    .profile-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .profile-name { font-size: 20px; font-weight: 800; color: var(--text-main); }
+    .profile-dni {
+      font-family: var(--font-mono); font-size: 11px; background: var(--bg-page);
+      color: var(--text-muted); border: 1px solid var(--border-card); padding: 2px 6px; border-radius: 4px;
+    }
+    .profile-role { font-size: 13px; font-weight: 500; color: var(--text-muted); margin-top: 2px; }
+    .profile-meta-tags {
+      display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--text-muted);
+    }
+    .profile-meta-tags span { display: inline-flex; align-items: center; gap: 4px; }
+
+    .profile-right {
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+      border-top: 1px solid var(--border-subtle); padding-top: 16px;
+    }
+    @media (min-width: 900px) {
+      .profile-right { border-top: none; padding-top: 0; justify-content: flex-end; }
+    }
+    .score-display { text-align: right; }
+    .score-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-subtle); }
+    .score-number-group { display: flex; align-items: baseline; justify-content: flex-end; gap: 4px; }
+    .score-number { font-size: 40px; font-weight: 900; line-height: 1; color: var(--text-main); }
+    .score-total { font-size: 14px; color: var(--text-subtle); font-weight: 600; }
+    .score-risk-tag { font-size: 12px; font-weight: 700; margin-top: 2px; }
+    .score-divider { width: 1px; height: 48px; background: var(--border-card); }
+
+    .decision-badge {
+      display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;
+      border-radius: var(--radius-md); font-size: 14px; font-weight: 800;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .badge-approved { background: var(--success-bg); border: 1px solid var(--success-border); color: var(--success-text); }
+    .badge-conditioned { background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text); }
+    .badge-rejected { background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger-text); }
+
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(1, 1fr); gap: 16px;
+    }
+    @media (min-width: 600px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .metrics-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    .metric-card {
+      background: var(--bg-card); border: 1px solid var(--border-card);
+      border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm);
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .metric-header { display: flex; align-items: center; justify-content: space-between; }
+    .metric-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+    .metric-icon-box {
+      width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    }
+    .metric-icon-blue { background: #eff6ff; color: #2563eb; }
+    .metric-icon-green { background: #ecfdf5; color: #059669; }
+    .metric-icon-purple { background: #f5f3ff; color: #7c3aed; }
+    .metric-icon-red { background: #fff1f2; color: #e11d48; }
+
+    .metric-value-row { margin: 10px 0 4px 0; display: flex; align-items: baseline; gap: 8px; }
+    .metric-value { font-size: 24px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; }
+    .metric-pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); }
+    .metric-footer { font-size: 12px; color: var(--text-muted); }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media (min-width: 960px) { .charts-grid { grid-template-columns: 2fr 1fr; } }
+    .card-title-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+    @media (min-width: 600px) {
+      .card-title-row { flex-direction: row; align-items: center; justify-content: space-between; }
+    }
+    .card-title { font-size: 16px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+    .card-subtitle { font-size: 12px; color: var(--text-muted); }
+    .chart-legend-row { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+    .svg-chart-container { width: 100%; height: 280px; position: relative; }
+    .category-legend-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; max-height: 140px; overflow-y: auto; }
+    .category-legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+
+    .offers-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media (min-width: 900px) { .offers-grid { grid-template-columns: 1fr 1fr; } }
+
+    .virtual-card-box {
+      width: 100%; height: 210px; border-radius: 18px; padding: 24px; color: #fff;
+      display: flex; flex-direction: column; justify-content: space-between; position: relative;
+      overflow: hidden; box-shadow: 0 12px 28px rgba(0,0,0,0.25); margin-bottom: 20px;
+    }
+    .card-brand-row { display: flex; align-items: center; justify-content: space-between; z-index: 2; }
+    .card-bank-name { font-size: 14px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+    .card-category-pill { font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 3px 10px; border-radius: var(--radius-full); }
+    .card-chip-row { display: flex; align-items: center; gap: 12px; z-index: 2; }
+    .gold-chip {
+      width: 40px; height: 28px; background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+      border-radius: 6px; border: 1px solid rgba(255,255,255,0.4); position: relative;
+    }
+    .card-footer-row { display: flex; align-items: flex-end; justify-content: space-between; z-index: 2; }
+    .card-number-dots { font-family: var(--font-mono); font-size: 12px; letter-spacing: 2px; opacity: 0.85; }
+    .card-holder-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+    .card-limit-label { font-size: 10px; text-transform: uppercase; opacity: 0.75; display: block; }
+    .card-limit-val { font-size: 22px; font-weight: 900; color: #fef08a; letter-spacing: -0.5px; }
+    .card-bg-circle {
+      position: absolute; right: -30px; bottom: -30px; width: 180px; height: 180px;
+      border-radius: 50%; background: rgba(255,255,255,0.06); pointer-events: none;
+    }
+    .benefits-list { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-muted); }
+    .benefits-list li { display: flex; align-items: center; gap: 8px; }
+
+    .simulator-box {
+      background: var(--bg-page); border: 1px solid var(--border-card); border-radius: var(--radius-md);
+      padding: 18px; display: flex; flex-direction: column; gap: 16px;
+    }
+    .range-slider-wrapper { display: flex; flex-direction: column; gap: 6px; }
+    .slider-label-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--text-main); }
+    .slider-val-highlight { font-size: 15px; font-weight: 800; color: var(--accent-indigo); }
+    input[type="range"] { width: 100%; accent-color: var(--accent-indigo); cursor: pointer; }
+    .slider-hints { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-subtle); }
+    .terms-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .term-btn {
+      padding: 8px; font-size: 12px; font-weight: 600; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-card); background: #fff; color: var(--text-muted);
+      cursor: pointer; text-align: center; transition: all 0.15s; font-family: inherit;
+    }
+    .term-btn:hover { background: var(--border-subtle); }
+    .term-btn.active {
+      border-color: var(--accent-indigo); background: var(--accent-indigo-light);
+      color: var(--accent-indigo); font-weight: 800;
+    }
+    .sim-results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+    .sim-card { padding: 14px; border-radius: var(--radius-md); display: flex; flex-direction: column; justify-content: space-between; }
+    .sim-card-primary { background: var(--accent-indigo-light); border: 1px solid #c7d2fe; }
+    .sim-card-secondary { background: var(--bg-page); border: 1px solid var(--border-card); }
+    .sim-card-title { font-size: 11px; font-weight: 700; color: #3730a3; }
+    .sim-card-val { font-size: 24px; font-weight: 900; color: #312e81; margin: 4px 0; }
+    .sim-card-tea { font-size: 10px; color: #4338ca; }
+
+    .table-responsive { width: 100%; overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-card); }
+    .modern-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    .modern-table thead {
+      background: var(--bg-page); color: var(--text-muted); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-card);
+    }
+    .modern-table th, .modern-table td { padding: 12px 18px; }
+    .modern-table tbody tr { border-bottom: 1px solid var(--border-subtle); }
+    .modern-table tbody tr:hover { background: #f8fafc; }
+    .modern-table tbody tr:last-child { border-bottom: none; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+
+    .decision-report-box { padding: 18px; border-radius: var(--radius-md); font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
+    .report-factors-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 768px) { .report-factors-grid { grid-template-columns: 1fr 1fr; } }
+    .factor-box { padding: 16px; border-radius: var(--radius-md); }
+    .factor-box-success { background: #f0fdf4; border: 1px solid #bbf7d0; }
+    .factor-box-danger { background: #fff1f2; border: 1px solid #fecdd3; }
+    .factor-title { font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .factor-list { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+    .factor-list li { display: flex; align-items: flex-start; gap: 8px; }
+
+    .score-breakdown-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+    @media (min-width: 640px) { .score-breakdown-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1024px) { .score-breakdown-grid { grid-template-columns: repeat(6, 1fr); } }
+    .score-factor-cell {
+      background: var(--bg-page); border: 1px solid var(--border-card); border-radius: var(--radius-sm);
+      padding: 12px; text-align: center;
+    }
+    .score-factor-name { font-size: 11px; color: var(--text-muted); display: block; }
+    .score-factor-pts { font-size: 16px; font-weight: 800; color: var(--text-main); margin-top: 4px; display: block; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 200;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal-card {
+      background: #fff; border-radius: var(--radius-lg); max-width: 520px; width: 100%;
+      padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); position: relative;
+    }
+    .modal-close-btn {
+      position: absolute; top: 18px; right: 18px; background: transparent; border: none;
+      cursor: pointer; color: var(--text-subtle); font-size: 18px;
+    }
+    .dropzone-box {
+      border: 2px dashed #cbd5e1; border-radius: var(--radius-md); padding: 28px;
+      text-align: center; cursor: pointer; background: var(--bg-page); transition: all 0.2s;
+    }
+    .dropzone-box:hover { border-color: var(--accent-sky); background: #f0f9ff; }
+
+    .hidden { display: none !important; }
+    footer {
+      background: #fff; border-top: 1px solid var(--border-card); padding: 16px;
+      text-align: center; font-size: 12px; color: var(--text-muted); margin-top: auto;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; color: black !important; }
+      .card { box-shadow: none !important; border: 1px solid #ccc !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="top-header no-print">
+    <div class="header-inner">
+      <div class="brand-wrapper">
+        <div class="brand-icon-box">
+          <span data-icon="shield-check" style="width:24px; height:24px;"></span>
+        </div>
+        <div>
+          <span class="brand-title">CreditSense</span>
+          <span class="brand-tag">Motor de Crédito Offline v2.5</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <a href="/nuevo-cliente" target="_blank" class="btn btn-primary" style="background:#0284c7; box-shadow:0 2px 8px rgba(2,132,199,0.35);">
+          <span data-icon="users" style="width:16px; height:16px;"></span>
+          + Registrar Nuevo Cliente
+        </a>
+        <button onclick="openUploadModal()" class="btn btn-header-upload">
+          <span data-icon="upload-cloud" style="width:16px; height:16px;"></span>
+          Importar CSV / Excel
+        </button>
+        <button onclick="window.print()" class="btn btn-header-print">
+          <span data-icon="printer" style="width:16px; height:16px;"></span>
+          Imprimir Dictamen
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CANDIDATE SELECTOR BAR -->
+  <section class="candidate-bar no-print">
+    <div class="candidate-bar-inner">
+      <div class="candidate-bar-label">
+        <span data-icon="users" style="width:16px; height:16px;"></span>
+        <span>Candidatos de prueba precargados:</span>
+      </div>
+      <div class="candidate-buttons-group" id="candidatesSelectorContainer">
+        <!-- Renderizado dinámicamente con JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-container">
+    
+    <!-- LOADING SPINNER -->
+    <div id="loadingIndicator" class="hidden" style="text-align:center; padding: 60px 0;">
+      <div style="width: 44px; height: 44px; border: 4px solid #bae6fd; border-top-color: #0284c7; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px auto;"></div>
+      <p style="font-size: 14px; font-weight: 600; color: #475569;">Auditando transacciones y evaluando perfil de riesgo...</p>
+    </div>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+    <!-- CONTENT WRAPPER -->
+    <div id="evaluationContent" style="display:flex; flex-direction:column; gap:24px;">
+      
+      <!-- 1. PROFILE HEADER CARD -->
+      <div class="card profile-banner">
+        <div class="profile-left">
+          <img id="clientAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" 
+               alt="Avatar" class="profile-avatar">
+          <div>
+            <div class="profile-name-row">
+              <h1 id="clientNombre" class="profile-name">Carlos Mendoza Silva</h1>
+              <span id="clientRut" class="profile-dni">15.892.411-K</span>
+            </div>
+            <p id="clientOcupacion" class="profile-role">Ingeniero de Software Senior / Tech Lead</p>
+            <div class="profile-meta-tags">
+              <span><span data-icon="building" style="width:13px; height:13px; color:#94a3b8;"></span> <strong id="clientEmpresa">Global Tech Solutions</strong></span>
+              <span><span data-icon="calendar" style="width:13px; height:13px; color:#94a3b8;"></span> Auditado: <strong>Últimos 6 meses</strong></span>
+              <span><span data-icon="activity" style="width:13px; height:13px; color:#94a3b8;"></span> Operaciones: <strong id="headerTxCount">--</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-right">
+          <div class="score-display">
+            <span class="score-label">Score Crediticio</span>
+            <div class="score-number-group">
+              <span id="scoreNumber" class="score-number">850</span>
+              <span class="score-total">/ 850</span>
+            </div>
+            <span id="scoreRiskLabel" class="score-risk-tag" style="color: #059669;">Bajo Riesgo (Excelente)</span>
+          </div>
+
+          <div class="score-divider"></div>
+
+          <div>
+            <span class="score-label" style="display:block; margin-bottom:4px;">Dictamen</span>
+            <div id="decisionBadge" class="decision-badge badge-approved">
+              <span id="decisionIcon" data-icon="check-circle" style="width:18px; height:18px;"></span>
+              <span id="decisionText">APROBADO</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. FOUR KEY METRIC CARDS -->
+      <div class="metrics-grid">
+        <!-- Ingreso Promedio -->
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Ingreso Mensual Promedio</span>
+            <div class="metric-icon-box metric-icon-blue">
+              <span data-icon="trending-up" style="width:16px; height:16px;"></span>
+            </div>
+          </div>
+          <div class="metric-value-row">
+            <span id="metricIngresoProm" class="metric-value">$4,600.00</span>
+          </div>
+          <div class="metric-footer">
+            Tendencia 6m: <strong id="metricTendencia" style="color:#059669;">+0.0%</strong>
+          </div>
+        </div>
+
+        <!-- Flujo Neto / Ahorro -->
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Flujo Neto / Ahorro Mensual</span>
+            <div class="metric-icon-box metric-icon-green">
+              <span data-icon="piggy-bank" style="width:16px; height:16px;"></span>
+            </div>
+          </div>
+          <div class="metric-value-row">
+            <span id="metricFlujoNeto" class="metric-value">$1,650.00</span>
+            <span id="metricTasaAhorro" class="metric-pill" style="background:#ecfdf5; color:#065f46;">35.9%</span>
+          </div>
+          <div class="metric-footer">
+            Superávit mensual libre
+          </div>
+        </div>
+
+        <!-- Capacidad Máxima de Cuota -->
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Capacidad Cuota Mensual</span>
+            <div class="metric-icon-box metric-icon-purple">
+              <span data-icon="calculator" style="width:16px; height:16px;"></span>
+            </div>
+          </div>
+          <div class="metric-value-row">
+            <span id="metricCapacidadCuota" class="metric-value" style="color:#6d28d9;">$1,155.00</span>
+          </div>
+          <div class="metric-footer">
+            DTI actual: <strong id="metricDti">6.9%</strong> (Máx recomendado 35%)
+          </div>
+        </div>
+
+        <!-- Alertas de Sobregiro -->
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Alertas de Sobregiro</span>
+            <div id="iconSobregiroBg" class="metric-icon-box metric-icon-green">
+              <span data-icon="alert-triangle" style="width:16px; height:16px;"></span>
+            </div>
+          </div>
+          <div class="metric-value-row">
+            <span id="metricSobregiros" class="metric-value">0</span>
+            <span style="font-size:11px; color:#94a3b8;">incidencias</span>
+          </div>
+          <div class="metric-footer">
+            Saldo mín. en 6m: <strong id="metricSaldoMin">$2,410.00</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. CHARTS SECTION -->
+      <div class="charts-grid">
+        <!-- Cashflow Evolution -->
+        <div class="card">
+          <div class="card-title-row">
+            <div>
+              <h2 class="card-title">
+                <span data-icon="bar-chart" style="width:18px; height:18px; color:var(--accent-sky);"></span>
+                Evolución de Ingresos vs Egresos (Últimos 6 Meses)
+              </h2>
+              <p class="card-subtitle">Comparativa mes a mes de flujos y generación de liquidez.</p>
+            </div>
+            <div class="chart-legend-row">
+              <span><span class="legend-dot" style="background:#0284c7;"></span>Ingresos</span>
+              <span><span class="legend-dot" style="background:#f43f5e;"></span>Egresos</span>
+              <span><span class="legend-dot" style="background:#10b981;"></span>Flujo Neto</span>
+            </div>
+          </div>
+          <!-- Contenedor del gráfico SVG -->
+          <div id="cashflowSvgContainer" class="svg-chart-container"></div>
+        </div>
+
+        <!-- Expenses by Category -->
+        <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div class="card-title-row">
+              <div>
+                <h2 class="card-title">
+                  <span data-icon="pie-chart" style="width:18px; height:18px; color:var(--accent-indigo);"></span>
+                  Distribución de Gastos
+                </h2>
+                <p class="card-subtitle">Egresos categorizados en el periodo.</p>
+              </div>
+            </div>
+            <div id="categorySvgContainer" style="display:flex; justify-content:center; align-items:center; height:180px;"></div>
+          </div>
+          <div id="categoryLegendContainer" class="category-legend-list"></div>
+        </div>
+      </div>
+
+      <!-- 4. OFFERS SECTION (CREDIT CARD & LOAN SIMULATOR) -->
+      <div class="offers-grid">
+        <!-- PRODUCT 1: CREDIT CARD -->
+        <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+              <div>
+                <h3 class="card-title">
+                  <span data-icon="credit-card" style="width:18px; height:18px; color:var(--accent-sky);"></span>
+                  Oferta de Tarjeta de Crédito
+                </h3>
+                <p class="card-subtitle">Categoría pre-aprobada según score y nivel de liquidez</p>
+              </div>
+              <span id="tcElegibleBadge" class="decision-badge badge-approved" style="padding:4px 10px; font-size:11px;">Pre-Aprobada</span>
+            </div>
+
+            <!-- Virtual Card Mockup -->
+            <div id="virtualCard" class="virtual-card-box" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%);">
+              <div class="card-brand-row">
+                <span class="card-bank-name">Banco CreditSense</span>
+                <span id="tcCategoryBadge" class="card-category-pill" style="background:#f59e0b; color:#0f172a;">Black Signature</span>
+              </div>
+
+              <div class="card-chip-row">
+                <div class="gold-chip"></div>
+                <span data-icon="wifi" style="width:18px; height:18px; color:rgba(255,255,255,0.7); transform: rotate(90deg);"></span>
+              </div>
+
+              <div class="card-footer-row">
+                <div>
+                  <div class="card-number-dots">•••• •••• •••• 8912</div>
+                  <div id="tcCardHolder" class="card-holder-name">CARLOS MENDOZA SILVA</div>
+                </div>
+                <div style="text-align:right;">
+                  <span class="card-limit-label">Límite Sugerido</span>
+                  <span id="tcCardLimit" class="card-limit-val">$12,800.00</span>
+                </div>
+              </div>
+
+              <div class="card-bg-circle"></div>
+            </div>
+
+            <!-- Perks list -->
+            <span style="font-size:12px; font-weight:700; color:var(--text-main); display:block; margin-bottom:8px;">Beneficios incluidos:</span>
+            <ul id="tcBenefitsList" class="benefits-list"></ul>
+          </div>
+
+          <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted);">
+            <span>Tasa Anual (TEA): <strong id="tcTasaInteres" style="color:var(--text-main);">18.5%</strong></span>
+            <span>Facturación: <strong>Mensual</strong></span>
+          </div>
+        </div>
+
+        <!-- PRODUCT 2: BANK LOAN SIMULATOR -->
+        <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+              <div>
+                <h3 class="card-title">
+                  <span data-icon="landmark" style="width:18px; height:18px; color:var(--accent-indigo);"></span>
+                  Simulador de Crédito Bancario
+                </h3>
+                <p class="card-subtitle">Validación en tiempo real contra la capacidad de pago mensual</p>
+              </div>
+              <span id="loanElegibleBadge" class="decision-badge badge-approved" style="padding:4px 10px; font-size:11px;">Pre-Aprobado</span>
+            </div>
+
+            <div class="simulator-box">
+              <!-- Monto Slider -->
+              <div class="range-slider-wrapper">
+                <div class="slider-label-row">
+                  <span>Monto Solicitado:</span>
+                  <span id="simulatorMontoLabel" class="slider-val-highlight">$10,000.00</span>
+                </div>
+                <input type="range" id="loanAmountSlider" min="500" max="40000" step="500" value="10000" oninput="updateLoanSimulation()">
+                <div class="slider-hints">
+                  <span>Mín: $500</span>
+                  <span>Sugerido: <strong id="simulatorMontoMaxLabel">$24,000</strong></span>
+                  <span>Máx: $40,000</span>
+                </div>
+              </div>
+
+              <!-- Term buttons -->
+              <div>
+                <label style="font-size:12px; font-weight:600; color:var(--text-main); display:block; margin-bottom:6px;">Plazo del Crédito:</label>
+                <div class="terms-grid">
+                  <button type="button" onclick="setLoanTerm(12)" class="term-btn" data-term="12">12 Meses</button>
+                  <button type="button" onclick="setLoanTerm(24)" class="term-btn" data-term="24">24 Meses</button>
+                  <button type="button" onclick="setLoanTerm(36)" class="term-btn active" data-term="36">36 Meses</button>
+                  <button type="button" onclick="setLoanTerm(48)" class="term-btn" data-term="48">48 Meses</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Simulation result cards -->
+            <div class="sim-results-grid">
+              <div class="sim-card sim-card-primary">
+                <span class="sim-card-title">Cuota Mensual Estimada</span>
+                <span id="simulatorCuota" class="sim-card-val">$340.50</span>
+                <span id="simulatorTea" class="sim-card-tea">Tasa TEA: 13.5%</span>
+              </div>
+
+              <div class="sim-card sim-card-secondary">
+                <span style="font-size:11px; font-weight:700; color:var(--text-main);">Capacidad de Pago</span>
+                <div id="simulatorStatusBadge" style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:700; background:#ecfdf5; color:#065f46; margin: 4px 0;">
+                  <span data-icon="check" style="width:12px; height:12px;"></span> Cuota Soportable
+                </div>
+                <span style="font-size:10px; color:var(--text-muted);">
+                  Compromete el <strong id="simulatorPorcentajeUso">29.4%</strong> de su cuota disponible
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted);">
+            <span>Total a devolver: <strong id="simulatorTotalDevolver" style="color:var(--text-main);">$12,258.00</strong></span>
+            <span>Intereses: <strong id="simulatorIntereses" style="color:var(--text-main);">$2,258.00</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 6-MONTH MONTHLY BEHAVIOR TABLE -->
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div style="padding:20px 24px; border-bottom:1px solid var(--border-card);">
+          <h3 class="card-title">
+            <span data-icon="table" style="width:18px; height:18px; color:var(--accent-sky);"></span>
+            Auditoría Mensual del Comportamiento Financiero (6 Meses)
+          </h3>
+          <p class="card-subtitle">Detalle de ingresos, egresos, saldos mínimos y control de sobregiros mes a mes.</p>
+        </div>
+
+        <div class="table-responsive" style="border:none; border-radius:0;">
+          <table class="modern-table">
+            <thead>
+              <tr>
+                <th>Mes Auditado</th>
+                <th class="text-right">Ingresos</th>
+                <th class="text-right">Egresos</th>
+                <th class="text-right">Flujo Neto</th>
+                <th class="text-right">Tasa Ahorro</th>
+                <th class="text-right">Saldo Promedio</th>
+                <th class="text-right">Saldo Mínimo</th>
+                <th class="text-center">Sobregiros</th>
+                <th class="text-right">Pagos Deuda</th>
+              </tr>
+            </thead>
+            <tbody id="tableMonthlyBody">
+              <!-- Inyectado por JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 6. DECISION EXPLAINABILITY & COMMITTEE REPORT -->
+      <div class="card">
+        <h3 class="card-title" style="margin-bottom:16px;">
+          <span data-icon="file-text" style="width:18px; height:18px; color:var(--accent-indigo);"></span>
+          Dictamen y Resolución del Comité de Créditos
+        </h3>
+
+        <div id="dictamenSummaryBox" class="decision-report-box" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af;">
+          <strong style="display:block; margin-bottom:4px;">Resolución Oficial:</strong>
+          <span id="dictamenSummaryText">Candidato calificado. Solvencia demostrada y capacidad de endeudamiento favorable.</span>
+        </div>
+
+        <div class="report-factors-grid">
+          <div class="factor-box factor-box-success">
+            <h4 class="factor-title" style="color:#065f46;">
+              <span data-icon="check-circle" style="width:16px; height:16px; color:#10b981;"></span>
+              Factores Favorables Detectados
+            </h4>
+            <ul id="positiveReasonsList" class="factor-list" style="color:#065f46;"></ul>
+          </div>
+
+          <div class="factor-box factor-box-danger">
+            <h4 class="factor-title" style="color:#9f1239;">
+              <span data-icon="alert-triangle" style="width:16px; height:16px; color:#f43f5e;"></span>
+              Factores de Riesgo / Puntos de Atención
+            </h4>
+            <ul id="riskReasonsList" class="factor-list" style="color:#9f1239;"></ul>
+          </div>
+        </div>
+
+        <!-- Score Breakdown Grid -->
+        <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-card);">
+          <span style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px; display:block; margin-bottom:12px;">
+            Desglose del Score Crediticio (Escala 300 - 850 Pts)
+          </span>
+          <div class="score-breakdown-grid">
+            <div class="score-factor-cell">
+              <span class="score-factor-name">Puntaje Base</span>
+              <span id="scoreBasePts" class="score-factor-pts">300</span>
+            </div>
+            <div class="score-factor-cell">
+              <span class="score-factor-name">Estabilidad Ingresos</span>
+              <span id="scoreEstabilidadPts" class="score-factor-pts">+150</span>
+            </div>
+            <div class="score-factor-cell">
+              <span class="score-factor-name">Capacidad Ahorro</span>
+              <span id="scoreAhorroPts" class="score-factor-pts">+160</span>
+            </div>
+            <div class="score-factor-cell">
+              <span class="score-factor-name">Historial Liquidez</span>
+              <span id="scoreLiquidezPts" class="score-factor-pts">+130</span>
+            </div>
+            <div class="score-factor-cell">
+              <span class="score-factor-name">Superávit vs Déficit</span>
+              <span id="scoreDeficitPts" class="score-factor-pts">+60</span>
+            </div>
+            <div class="score-factor-cell">
+              <span class="score-factor-name">Nivel Endeudamiento</span>
+              <span id="scoreDtiPts" class="score-factor-pts">+50</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- UPLOAD MODAL -->
+  <div id="uploadModal" class="modal-overlay">
+    <div class="modal-card">
+      <button onclick="closeUploadModal()" class="modal-close-btn">&times;</button>
+      
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+        <div style="width:40px; height:40px; border-radius:10px; background:#e0f2fe; color:#0284c7; display:flex; align-items:center; justify-content:center;">
+          <span data-icon="upload-cloud" style="width:22px; height:22px;"></span>
+        </div>
+        <div>
+          <h3 style="font-size:16px; font-weight:800; color:var(--text-main);">Importar Movimientos</h3>
+          <p style="font-size:12px; color:var(--text-muted);">Carga un estado de cuenta de los últimos 6 meses en CSV o Excel (.xlsx)</p>
+        </div>
+      </div>
+
+      <form id="uploadForm" onsubmit="handleFileUpload(event)" style="display:flex; flex-direction:column; gap:14px;">
+        <div id="dropZone" class="dropzone-box" onclick="document.getElementById('fileInput').click()">
+          <input type="file" id="fileInput" name="file" accept=".csv, .xlsx, .xls" class="hidden" onchange="onFileSelected(this)">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+            <span data-icon="upload-cloud" style="width:36px; height:36px; color:#94a3b8;"></span>
+            <span id="dropZoneText" style="font-size:13px; font-weight:600; color:var(--text-main);">Haz clic para seleccionar o arrastra tu archivo aquí</span>
+            <span style="font-size:11px; color:#94a3b8;">Formatos admitidos: .CSV, .XLSX (Máx. 16MB)</span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label style="font-size:11px; font-weight:700; color:var(--text-main); display:block; margin-bottom:4px;">Nombre Candidato (Opcional):</label>
+            <input type="text" id="inputClientName" name="nombre_cliente" placeholder="Ej. Ana María Torres" style="width:100%; font-size:12px; padding:8px 10px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700; color:var(--text-main); display:block; margin-bottom:4px;">RUT / DNI (Opcional):</label>
+            <input type="text" id="inputClientRut" name="rut_dni" placeholder="Ej. 19.345.678-2" style="width:100%; font-size:12px; padding:8px 10px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+          </div>
+        </div>
+
+        <div style="padding:10px 14px; background:var(--bg-page); border:1px solid var(--border-card); border-radius:8px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-muted);">
+          <span>¿Necesitas una plantilla de ejemplo?</span>
+          <a href="/api/download-template" style="color:var(--accent-sky); font-weight:700; text-decoration:none;">Descargar Plantilla Excel</a>
+        </div>
+
+        <div id="uploadError" class="hidden" style="padding:10px; border-radius:6px; background:#fff1f2; border:1px solid #fecdd3; color:#9f1239; font-size:12px; font-weight:600;"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
+          <button type="button" onclick="closeUploadModal()" class="btn btn-secondary" style="padding:8px 14px;">Cancelar</button>
+          <button type="submit" id="btnSubmitUpload" class="btn btn-primary" style="padding:8px 18px;">Analizar Comportamiento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="no-print">
+    <p>CreditSense Analytics • Módulo de Evaluación Crediticia Basado en Flujo de Caja (6 Meses) • 100% Autónomo y Seguro</p>
+  </footer>
+
+  <!-- SCRIPTS AUTÓNOMOS (OFFLINE) -->
+  <script src="/static/js/icons.js"></script>
+  <script src="/static/js/chart_renderer.js"></script>
+  
+  <script>
+    let currentAnalysisData = null;
+    let currentTerm = 36;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAllIcons();
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetClient = urlParams.get('client') || 'carlos_excelente';
+
+      loadCandidatesMenu(targetClient);
+      loadCandidateAnalysis(targetClient);
+    });
+
+    async function loadCandidatesMenu(selectedKey) {
+      try {
+        const resp = await fetch('/api/candidates');
+        const candidates = await resp.json();
+        const container = document.getElementById('candidatesSelectorContainer');
+        container.innerHTML = '';
+
+        candidates.forEach((c) => {
+          const btn = document.createElement('button');
+          const isSelected = c.perfil_key === selectedKey;
+          btn.className = `candidate-pill ${isSelected ? 'active' : ''}`;
+          btn.id = `btn-cand-${c.perfil_key}`;
+          const shortName = c.client_info.nombre.split(' ')[0];
+          const isCustom = c.client_info.es_personalizado;
+          const tag = isCustom ? 'Nuevo' : (c.client_info.etiqueta_perfil.split('(')[1]?.replace(')', '') || 'Perfil');
+          btn.innerHTML = `<strong>${shortName}</strong> (${tag}) ${isCustom ? '⭐' : ''}`;
+          btn.onclick = () => {
+            document.querySelectorAll('.candidate-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadCandidateAnalysis(c.perfil_key);
+          };
+          container.appendChild(btn);
+        });
+      } catch (err) {
+        console.error("Error loading candidates:", err);
+      }
+    }
+
+    async function loadCandidateAnalysis(candidateKey) {
+      showLoading(true);
+      try {
+        const resp = await fetch(`/api/candidate/${candidateKey}`);
+        const result = await resp.json();
+        if (result.success) {
+          renderDashboard(result.data);
+        } else {
+          alert("Error: " + result.error);
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+        alert("Error de conexión al cargar datos.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function showLoading(show) {
+      document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
+      document.getElementById('evaluationContent').classList.toggle('hidden', show);
+    }
+
+    function renderDashboard(data) {
+      currentAnalysisData = data;
+      const c = data.cliente;
+      const r = data.resumen_6_meses;
+      const sc = data.score_crediticio;
+      const of = data.ofertas;
+
+      // 1. Header Cliente
+      document.getElementById('clientNombre').innerText = c.nombre;
+      document.getElementById('clientRut').innerText = c.rut_dni || 'N/A';
+      document.getElementById('clientOcupacion').innerText = c.ocupacion;
+      document.getElementById('clientEmpresa').innerText = c.empresa || 'Empresa';
+      document.getElementById('headerTxCount').innerText = `${data.evolucion_mensual.reduce((acc, m) => acc + m.transacciones_count, 0)} ops`;
+      if (c.avatar) document.getElementById('clientAvatar').src = c.avatar;
+
+      // 2. Score y Dictamen
+      document.getElementById('scoreNumber').innerText = sc.score;
+      document.getElementById('scoreRiskLabel').innerText = sc.nivel_riesgo;
+
+      const decBadge = document.getElementById('decisionBadge');
+      const decText = document.getElementById('decisionText');
+      const decIcon = document.getElementById('decisionIcon');
+      decText.innerText = sc.decision;
+
+      if (sc.decision === 'APROBADO') {
+        decBadge.className = 'decision-badge badge-approved';
+        decIcon.setAttribute('data-icon', 'check-circle');
+      } else if (sc.decision === 'CONDICIONADO') {
+        decBadge.className = 'decision-badge badge-conditioned';
+        decIcon.setAttribute('data-icon', 'alert-circle');
+      } else {
+        decBadge.className = 'decision-badge badge-rejected';
+        decIcon.setAttribute('data-icon', 'x-circle');
+      }
+
+      // 3. Tarjetas Métricas
+      document.getElementById('metricIngresoProm').innerText = formatMoney(r.ingreso_promedio_mensual);
+      
+      const tendElem = document.getElementById('metricTendencia');
+      tendElem.innerText = (r.tendencia_ingresos_pct >= 0 ? '+' : '') + r.tendencia_ingresos_pct + '%';
+      tendElem.style.color = r.tendencia_ingresos_pct >= 0 ? '#059669' : '#e11d48';
+
+      document.getElementById('metricFlujoNeto').innerText = formatMoney(r.flujo_neto_promedio);
+      const ahorroPill = document.getElementById('metricTasaAhorro');
+      ahorroPill.innerText = r.tasa_ahorro_promedio_pct + '%';
+      if (r.tasa_ahorro_promedio_pct >= 15) {
+        ahorroPill.style.background = '#ecfdf5'; ahorroPill.style.color = '#065f46';
+      } else if (r.tasa_ahorro_promedio_pct > 0) {
+        ahorroPill.style.background = '#fffbeb'; ahorroPill.style.color = '#92400e';
+      } else {
+        ahorroPill.style.background = '#fff1f2'; ahorroPill.style.color = '#9f1239';
+      }
+
+      document.getElementById('metricCapacidadCuota').innerText = formatMoney(of.capacidad_cuota_mensual);
+      document.getElementById('metricDti').innerText = r.dti_actual_pct + '%';
+      document.getElementById('metricSobregiros').innerText = r.total_sobregiros;
+      document.getElementById('metricSaldoMin').innerText = formatMoney(r.saldo_minimo_historico);
+
+      const iconSgBg = document.getElementById('iconSobregiroBg');
+      if (r.total_sobregiros > 0 || r.saldo_minimo_historico < 0) {
+        iconSgBg.className = 'metric-icon-box metric-icon-red';
+      } else {
+        iconSgBg.className = 'metric-icon-box metric-icon-green';
+      }
+
+      // 4. Renderizar Gráficos SVG Autónomos
+      renderCashflowSVG('cashflowSvgContainer', data.evolucion_mensual);
+      renderCategorySVG('categorySvgContainer', 'categoryLegendContainer', data.distribucion_gastos);
+
+      // 5. Oferta Tarjeta de Crédito
+      renderCreditCardSection(of.tarjeta_credito, c.nombre);
+
+      // 6. Simulador Préstamo
+      renderLoanSimulatorSection(of.credito_bancario, of.capacidad_cuota_mensual);
+
+      // 7. Tabla Mensual 6 Meses
+      renderMonthlyTable(data.evolucion_mensual);
+
+      // 8. Informe Explicativo
+      renderDecisionReport(sc);
+
+      // Renderizar iconos
+      renderAllIcons();
+    }
+
+    function renderCreditCardSection(tc, clientName) {
+      const cardBox = document.getElementById('virtualCard');
+      const badge = document.getElementById('tcCategoryBadge');
+      const holder = document.getElementById('tcCardHolder');
+      const limit = document.getElementById('tcCardLimit');
+      const tea = document.getElementById('tcTasaInteres');
+      const elegibleBadge = document.getElementById('tcElegibleBadge');
+      const perksList = document.getElementById('tcBenefitsList');
+
+      holder.innerText = clientName.toUpperCase();
+      perksList.innerHTML = '';
+
+      if (!tc.elegible) {
+        cardBox.style.background = 'linear-gradient(135deg, #334155 0%, #1e293b 100%)';
+        badge.innerText = 'No Elegible';
+        badge.style.background = '#475569'; badge.style.color = '#cbd5e1';
+        limit.innerText = '$0.00';
+        tea.innerText = 'N/A';
+        elegibleBadge.className = 'decision-badge badge-rejected';
+        elegibleBadge.innerText = 'No Califica';
+        perksList.innerHTML = `<li><span data-icon="alert-triangle" style="width:14px; height:14px; color:#e11d48;"></span> ${tc.mensaje || 'No califica para línea revolvente.'}</li>`;
+        return;
+      }
+
+      cardBox.style.background = tc.estilo_css || 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%)';
+      badge.innerText = tc.categoria;
+      limit.innerText = formatMoney(tc.limite_sugerido);
+      tea.innerText = tc.tasa_interes_anual_pct + '%';
+      elegibleBadge.className = 'decision-badge badge-approved';
+      elegibleBadge.innerText = 'Pre-Aprobada';
+
+      (tc.beneficios || []).forEach(b => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span data-icon="check" style="width:14px; height:14px; color:#10b981; flex-shrink:0;"></span> <span>${b}</span>`;
+        perksList.appendChild(li);
+      });
+    }
+
+    function renderLoanSimulatorSection(loan, capacidadCuota) {
+      const slider = document.getElementById('loanAmountSlider');
+      const elegibleBadge = document.getElementById('loanElegibleBadge');
+
+      if (!loan.elegible) {
+        elegibleBadge.className = 'decision-badge badge-rejected';
+        elegibleBadge.innerText = 'No Califica';
+        slider.disabled = true;
+        document.getElementById('simulatorCuota').innerText = '$0.00';
+        document.getElementById('simulatorStatusBadge').innerHTML = '<span data-icon="x" style="width:12px; height:12px;"></span> No Califica';
+        document.getElementById('simulatorStatusBadge').style.background = '#fff1f2';
+        document.getElementById('simulatorStatusBadge').style.color = '#9f1239';
+        return;
+      }
+
+      slider.disabled = false;
+      elegibleBadge.className = 'decision-badge badge-approved';
+      elegibleBadge.innerText = 'Pre-Aprobado';
+
+      const montoMax = loan.monto_maximo_sugerido || 10000;
+      slider.max = Math.max(montoMax * 1.5, 5000);
+      slider.value = montoMax;
+      document.getElementById('simulatorMontoMaxLabel').innerText = formatMoney(montoMax);
+
+      currentTerm = loan.plazo_sugerido_meses || 24;
+      setLoanTerm(currentTerm);
+    }
+
+    function setLoanTerm(term) {
+      currentTerm = term;
+      document.querySelectorAll('.term-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.getAttribute('data-term')) === term);
+      });
+      updateLoanSimulation();
+    }
+
+    async function updateLoanSimulation() {
+      if (!currentAnalysisData || !currentAnalysisData.ofertas.credito_bancario.elegible) return;
+
+      const slider = document.getElementById('loanAmountSlider');
+      const monto = parseFloat(slider.value);
+      document.getElementById('simulatorMontoLabel').innerText = formatMoney(monto);
+
+      const tea = currentAnalysisData.ofertas.credito_bancario.tasa_anual_tea_pct || 18.0;
+      const capacidad = currentAnalysisData.ofertas.capacidad_cuota_mensual || 0.0;
+
+      try {
+        const resp = await fetch('/api/simulate-loan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            monto: monto,
+            plazo_meses: currentTerm,
+            tasa_anual_pct: tea,
+            capacidad_maxima: capacidad
+          })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          document.getElementById('simulatorCuota').innerText = formatMoney(res.cuota_mensual);
+          document.getElementById('simulatorTea').innerText = 'Tasa TEA: ' + res.tasa_anual_pct + '%';
+          document.getElementById('simulatorTotalDevolver').innerText = formatMoney(res.total_a_pagar);
+          document.getElementById('simulatorIntereses').innerText = formatMoney(res.intereses_totales);
+          document.getElementById('simulatorPorcentajeUso').innerText = res.porcentaje_compromiso + '%';
+
+          const badge = document.getElementById('simulatorStatusBadge');
+          if (res.excede_capacidad) {
+            badge.style.background = '#fff1f2'; badge.style.color = '#9f1239';
+            badge.innerHTML = '<span data-icon="alert-triangle" style="width:12px; height:12px;"></span> Supera Capacidad';
+          } else {
+            badge.style.background = '#ecfdf5'; badge.style.color = '#065f46';
+            badge.innerHTML = '<span data-icon="check" style="width:12px; height:12px;"></span> Cuota Soportable';
+          }
+          renderAllIcons();
+        }
+      } catch (err) {
+        console.error("Sim error:", err);
+      }
+    }
+
+    function renderMonthlyTable(meses) {
+      const tbody = document.getElementById('tableMonthlyBody');
+      tbody.innerHTML = '';
+
+      meses.forEach(m => {
+        const tr = document.createElement('tr');
+        const flujoColor = m.flujo_neto >= 0 ? '#059669' : '#e11d48';
+        const sgBadge = m.sobregiros > 0 
+          ? `<span style="padding:2px 8px; border-radius:4px; font-weight:700; background:#ffe4e6; color:#9f1239;">${m.sobregiros} ALERTA</span>`
+          : `<span style="color:#94a3b8;">0</span>`;
+
+        tr.innerHTML = `
+          <td style="font-weight:700; color:var(--text-main);">${m.mes_nombre}</td>
+          <td class="text-right" style="font-weight:600;">${formatMoney(m.ingresos)}</td>
+          <td class="text-right" style="color:#64748b;">${formatMoney(m.egresos)}</td>
+          <td class="text-right" style="font-weight:700; color:${flujoColor};">${formatMoney(m.flujo_neto)}</td>
+          <td class="text-right"><span style="font-weight:700;">${m.tasa_ahorro_pct}%</span></td>
+          <td class="text-right" style="color:#64748b;">${formatMoney(m.saldo_promedio)}</td>
+          <td class="text-right" style="font-weight:600; color:${m.saldo_minimo < 0 ? '#e11d48' : '#334155'};">${formatMoney(m.saldo_minimo)}</td>
+          <td class="text-center">${sgBadge}</td>
+          <td class="text-right" style="color:#64748b;">${formatMoney(m.pagos_deuda)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderDecisionReport(sc) {
+      document.getElementById('dictamenSummaryText').innerText = sc.dictamen_resumen;
+      const box = document.getElementById('dictamenSummaryBox');
+
+      if (sc.decision === 'APROBADO') {
+        box.style.background = '#f0fdf4'; box.style.borderColor = '#bbf7d0'; box.style.color = '#14532d';
+      } else if (sc.decision === 'CONDICIONADO') {
+        box.style.background = '#fffbeb'; box.style.borderColor = '#fde68a'; box.style.color = '#78350f';
+      } else {
+        box.style.background = '#fff1f2'; box.style.borderColor = '#fecdd3'; box.style.color = '#881337';
+      }
+
+      // Fortalezas
+      const posList = document.getElementById('positiveReasonsList');
+      posList.innerHTML = '';
+      if (!sc.razones_positivas || sc.razones_positivas.length === 0) {
+        posList.innerHTML = '<li style="color:#94a3b8; font-style:italic;">Sin fortalezas destacadas.</li>';
+      } else {
+        sc.razones_positivas.forEach(r => {
+          posList.innerHTML += `<li><span data-icon="check" style="width:14px; height:14px; color:#10b981; flex-shrink:0;"></span> <span>${r}</span></li>`;
+        });
+      }
+
+      // Riesgos
+      const riskList = document.getElementById('riskReasonsList');
+      riskList.innerHTML = '';
+      const allRisks = [...(sc.alertas_criticas || []), ...(sc.razones_riesgo || [])];
+      if (allRisks.length === 0) {
+        riskList.innerHTML = '<li style="color:#94a3b8; font-style:italic;">Sin factores de riesgo detectados.</li>';
+      } else {
+        allRisks.forEach(r => {
+          riskList.innerHTML += `<li><span data-icon="alert-triangle" style="width:14px; height:14px; color:#f43f5e; flex-shrink:0;"></span> <span>${r}</span></li>`;
+        });
+      }
+
+      // Desglose Puntos
+      const dp = sc.desglose_puntos;
+      document.getElementById('scoreBasePts').innerText = dp.base;
+      document.getElementById('scoreEstabilidadPts').innerText = '+' + dp.estabilidad_ingresos;
+      document.getElementById('scoreAhorroPts').innerText = '+' + dp.capacidad_ahorro;
+      document.getElementById('scoreLiquidezPts').innerText = '+' + dp.liquidez_sobregiros;
+      document.getElementById('scoreDeficitPts').innerText = '+' + dp.meses_deficitarios;
+      document.getElementById('scoreDtiPts').innerText = '+' + dp.endeudamiento_dti;
+    }
+
+    // Modal
+    function openUploadModal() { document.getElementById('uploadModal').classList.add('open'); }
+    function closeUploadModal() {
+      document.getElementById('uploadModal').classList.remove('open');
+      document.getElementById('uploadError').classList.add('hidden');
+      document.getElementById('uploadForm').reset();
+      document.getElementById('dropZoneText').innerText = "Haz clic para seleccionar o arrastra tu archivo aquí";
+    }
+
+    function onFileSelected(input) {
+      if (input.files && input.files[0]) {
+        document.getElementById('dropZoneText').innerText = `Archivo: ${input.files[0].name}`;
+      }
+    }
+
+    async function handleFileUpload(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('fileInput');
+      const errDiv = document.getElementById('uploadError');
+      errDiv.classList.add('hidden');
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        errDiv.innerText = "Por favor selecciona un archivo CSV o Excel.";
+        errDiv.classList.remove('hidden');
+        return;
+      }
+
+      const formData = new FormData(document.getElementById('uploadForm'));
+      const btn = document.getElementById('btnSubmitUpload');
+      btn.disabled = true; btn.innerText = "Analizando...";
+
+      try {
+        const resp = await fetch('/api/upload', { method: 'POST', body: formData });
+        const result = await resp.json();
+        if (result.success) {
+          closeUploadModal();
+          renderDashboard(result.data);
+          document.querySelectorAll('.candidate-pill').forEach(b => b.classList.remove('active'));
+        } else {
+          errDiv.innerText = result.error || "Error al procesar archivo.";
+          errDiv.classList.remove('hidden');
+        }
+      } catch (err) {
+        errDiv.innerText = "Error en la conexión con el servidor.";
+        errDiv.classList.remove('hidden');
+      } finally {
+        btn.disabled = false; btn.innerText = "Analizar Comportamiento";
+      }
+    }
+  </script>
+</body>
+</html>
