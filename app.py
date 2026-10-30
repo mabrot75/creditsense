@@ -13,7 +13,8 @@ from backend.sample_data import export_sample_files_to_disk
 from backend.database import (
     init_db, get_all_clients, get_client_by_key, get_client_by_id,
     save_client_to_db, update_client_info, delete_client_by_id,
-    append_transactions_to_client, generate_transactions_from_monthly_inputs
+    append_transactions_to_client, generate_transactions_from_monthly_inputs,
+    rename_bank_for_client, delete_bank_movements, get_client_banks_and_files
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -229,11 +230,12 @@ def upload_bank_movements():
 
         new_transactions = df.to_dict(orient='records')
 
-        # Acumular o reemplazar en SQLite
+        # Acumular o reemplazar en SQLite con archivo_origen registrado
         agregadas = append_transactions_to_client(
             client_id=client_id,
             new_transactions=new_transactions,
             banco_origen=banco_origen,
+            archivo_origen=file.filename,
             reemplazar=(not acumular)
         )
 
@@ -245,7 +247,7 @@ def upload_bank_movements():
 
         return jsonify({
             'success': True,
-            'message': f"Se han {'acumulado' if acumular else 'reemplazado'} {agregadas} movimientos de {banco_origen} para {client_record['nombre']}.",
+            'message': f"Se han {'acumulado' if acumular else 'reemplazado'} {agregadas} movimientos de {banco_origen} ({file.filename}) para {client_record['nombre']}.",
             'transacciones_agregadas': agregadas,
             'total_transacciones_cliente': len(all_txs),
             'total_ingresos_acumulados': round(total_ingresos, 2),
@@ -256,6 +258,89 @@ def upload_bank_movements():
 
     except Exception as e:
         return jsonify({'success': False, 'error': f'Error al procesar movimientos: {str(e)}'}), 500
+
+
+@app.route('/api/client/<client_id>/banks', methods=['GET'])
+def get_client_banks_api(client_id):
+    """Devuelve la lista de entidades bancarias y archivos vinculados para un cliente"""
+    try:
+        banks_list = get_client_banks_and_files(client_id)
+        return jsonify({'success': True, 'banks': banks_list})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@app.route('/api/client/rename-bank', methods=['POST'])
+def rename_bank_api():
+    """Modifica el nombre de una entidad bancaria vinculada a un cliente"""
+    try:
+        data = request.json or {}
+        client_id = data.get('client_id')
+        old_bank_name = data.get('old_bank_name', '').strip()
+        new_bank_name = data.get('new_bank_name', '').strip()
+
+        if not client_id or not old_bank_name or not new_bank_name:
+            return jsonify({'success': False, 'error': 'Parámetros insuficientes.'}), 400
+
+        success = rename_bank_for_client(client_id, old_bank_name, new_bank_name)
+        if success:
+            return jsonify({'success': True, 'message': f"Banco renombrado de '{old_bank_name}' a '{new_bank_name}' exitosamente."})
+        return jsonify({'success': False, 'error': 'No se encontraron movimientos asociados a ese banco para renombrar.'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/client/delete-bank-movements', methods=['POST'])
+def delete_bank_movements_api():
+    """
+    Elimina los movimientos de un banco o archivo específico para un cliente
+    y realiza el re-cálculo financiero inmediato de ingresos, débitos y scoring.
+    """
+    try:
+        data = request.json or {}
+        client_id = data.get('client_id')
+        banco_origen = data.get('banco_origen', '').strip()
+        archivo_origen = data.get('archivo_origen', '').strip() or None
+
+        if not client_id or not banco_origen:
+            return jsonify({'success': False, 'error': 'ID de cliente y nombre de banco son requeridos.'}), 400
+
+        client_record = get_client_by_id(client_id)
+        if not client_record:
+            return jsonify({'success': False, 'error': 'Cliente no encontrado.'}), 404
+
+        # Eliminar movimientos y recalcular saldos continuos
+        result = delete_bank_movements(client_id, banco_origen, archivo_origen)
+
+        # Re-evaluar scoring y clasificación con los movimientos restantes
+        client_info, remaining_txs = get_client_by_key(client_record['perfil_key'])
+        
+        nuevo_score = 0
+        nueva_decision = "SIN_DATOS"
+        nuevo_riesgo = "Sin movimientos registrados"
+
+        if remaining_txs:
+            analysis = engine.analyze_transactions(remaining_txs, client_info)
+            nuevo_score = analysis['score_crediticio']['score']
+            nueva_decision = analysis['score_crediticio']['decision']
+            nuevo_riesgo = analysis['score_crediticio']['nivel_riesgo']
+
+        return jsonify({
+            'success': True,
+            'message': f"Se eliminaron {result['transacciones_eliminadas']} movimientos vinculados a '{banco_origen}'. Re-cálculo completado.",
+            'transacciones_eliminadas': result['transacciones_eliminadas'],
+            'transacciones_restantes': result['transacciones_restantes'],
+            'ingresos_restantes': result['ingresos_restantes'],
+            'egresos_restantes': result['egresos_restantes'],
+            'nuevo_score': nuevo_score,
+            'nueva_decision': nueva_decision,
+            'nuevo_riesgo': nuevo_riesgo,
+            'perfil_key': client_record['perfil_key']
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/simulate-loan', methods=['POST'])

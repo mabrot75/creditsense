@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Carga de Movimientos Multi-Banco | CreditSense</title>
+  <title>Carga y Gestión de Movimientos Multi-Banco | CreditSense</title>
   
   <link rel="stylesheet" href="/static/css/style.css">
   
@@ -14,6 +14,7 @@
       --accent-sky-hover: #0369a1;
       --accent-emerald: #10b981;
       --accent-emerald-hover: #059669;
+      --accent-rose: #f43f5e;
       --bg-page: #f8fafc;
       --border-card: #e2e8f0;
       --text-main: #0f172a;
@@ -40,7 +41,7 @@
     .nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); }
     .nav-link.active { color: #fff; background: rgba(2,132,199,0.3); border: 1px solid rgba(56,189,248,0.4); }
 
-    .main-wrap { max-width: 960px; margin: 30px auto; padding: 0 20px; width: 100%; flex: 1; }
+    .main-wrap { max-width: 1060px; margin: 30px auto; padding: 0 20px; width: 100%; flex: 1; }
     .card {
       background: #fff; border: 1px solid var(--border-card); border-radius: var(--radius-lg);
       padding: 28px; box-shadow: var(--shadow-sm); margin-bottom: 24px;
@@ -61,7 +62,7 @@
     .bank-preset-btn:hover { background: #e0f2fe; color: #0284c7; border-color: #7dd3fc; }
 
     .dropzone {
-      border: 2px dashed #cbd5e1; border-radius: var(--radius-md); padding: 36px 20px;
+      border: 2px dashed #cbd5e1; border-radius: var(--radius-md); padding: 32px 20px;
       text-align: center; cursor: pointer; background: #f8fafc; transition: all 0.2s;
     }
     .dropzone:hover { border-color: var(--accent-emerald); background: #f0fdf4; }
@@ -75,6 +76,65 @@
       background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-md);
       padding: 20px; margin-top: 20px; display: none;
     }
+
+    /* Tablas de Entidades Bancarias */
+    .table-container { overflow-x: auto; margin-top: 12px; border: 1px solid var(--border-card); border-radius: var(--radius-md); }
+    .table-banks { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    .table-banks th {
+      background: #f8fafc; padding: 10px 14px; font-weight: 700; color: #475569;
+      border-bottom: 1px solid var(--border-card); white-space: nowrap; text-transform: uppercase; font-size: 11px;
+    }
+    .table-banks td {
+      padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+    }
+    .table-banks tr:last-child td { border-bottom: none; }
+    .table-banks tr:hover td { background: #fcfcfd; }
+
+    .badge-bank {
+      display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #1e293b;
+      background: #f1f5f9; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0;
+    }
+    .badge-file {
+      display: inline-flex; align-items: center; gap: 4px; font-family: monospace; font-size: 11px;
+      color: #475569; background: #fff; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 4px;
+    }
+
+    /* Botones de acción */
+    .btn-action-sm {
+      font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer;
+      border: 1px solid transparent; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+      transition: all 0.15s;
+    }
+    .btn-edit-bank { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .btn-edit-bank:hover { background: #dbeafe; }
+    .btn-delete-bank { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .btn-delete-bank:hover { background: #ffe4e6; }
+
+    /* Modales */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: auto; }
+    .modal-box {
+      background: #fff; border-radius: var(--radius-lg); max-width: 500px; width: 100%;
+      padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); position: relative;
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px; background: transparent; border: none;
+      font-size: 20px; cursor: pointer; color: #94a3b8; font-weight: 700; line-height: 1;
+    }
+    .modal-close:hover { color: #0f172a; }
+
+    .score-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+    }
+    .score-aprobado { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .score-preaprobado { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .score-rechazado { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .score-sindatos { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
   </style>
 </head>
 <body>
@@ -116,21 +176,31 @@
     <div style="margin-bottom:24px;">
       <h1 style="font-size:22px; font-weight:900; color:var(--text-main);">Carga y Consolidación de Movimientos Multi-Banco</h1>
       <p style="font-size:13px; color:var(--text-muted); margin-top:2px;">
-        Importa estados de cuenta en Excel o CSV y <strong>acumula ingresos y débitos de diferentes bancos</strong> para un mismo cliente.
+        Importa estados de cuenta en Excel o CSV, <strong>acumula ingresos y débitos de diferentes entidades</strong>, edita bancos y elimina movimientos con recálculo automático.
       </p>
     </div>
 
-    <!-- CARD FORM -->
+    <!-- SECCIÓN 1: FORMULARIO DE CARGA DE ARCHIVO -->
     <div class="card">
+      <div style="margin-bottom:18px;">
+        <h2 style="font-size:16px; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+          <span data-icon="upload-cloud" style="width:18px; height:18px; color:#10b981;"></span>
+          1. Importar y Acumular Archivo Bancario
+        </h2>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+          Sube un nuevo archivo de extracto bancario en CSV o Excel para sumarlo al perfil del cliente.
+        </p>
+      </div>
+
       <form id="uploadBankForm" onsubmit="handleMultiBankUpload(event)">
         
         <!-- SELECCIONAR CLIENTE -->
         <div class="form-group">
-          <label for="selectClient">1. Selecciona el Cliente a quien pertenecen los movimientos *</label>
+          <label for="selectClient">Seleccionar Candidato / Cliente *</label>
           <select id="selectClient" name="client_id" required onchange="onClientChanged(this.value)">
             <option value="">-- Elige un cliente de la base de datos --</option>
             {% for c in candidates %}
-              <option value="{{ c.client_info.id }}" data-key="{{ c.perfil_key }}">
+              <option value="{{ c.client_info.id }}" data-key="{{ c.perfil_key }}" data-name="{{ c.client_info.nombre }}">
                 {{ c.client_info.nombre }} (RUT: {{ c.client_info.rut_dni }}) - {{ c.total_transacciones }} ops
               </option>
             {% endfor %}
@@ -141,7 +211,7 @@
         <!-- SELECCIONAR BANCO DE ORIGEN -->
         <div class="form-group" style="margin-top:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-            <label for="bancoOrigen">2. Banco o Entidad Financiera de Origen *</label>
+            <label for="bancoOrigen">Banco o Entidad Financiera de Origen *</label>
             <div style="display:flex; gap:4px; flex-wrap:wrap;">
               <button type="button" onclick="setBankName('Banco Santander')" class="bank-preset-btn">Santander</button>
               <button type="button" onclick="setBankName('Banco de Chile')" class="bank-preset-btn">Banco de Chile</button>
@@ -169,11 +239,11 @@
 
         <!-- DROPZONE ARCHIVO -->
         <div class="form-group">
-          <label>3. Archivo con Estados de Cuenta (CSV o Excel .xlsx) *</label>
+          <label>Archivo con Estados de Cuenta (CSV o Excel .xlsx) *</label>
           <div id="dropZone" class="dropzone" onclick="document.getElementById('fileInput').click()">
             <input type="file" id="fileInput" name="file" accept=".csv, .xlsx, .xls" style="display:none;" onchange="onFileSelected(this)">
             <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
-              <span data-icon="upload-cloud" style="width:40px; height:40px; color:#059669;"></span>
+              <span data-icon="upload-cloud" style="width:38px; height:38px; color:#059669;"></span>
               <span id="dropZoneText" style="font-size:13px; font-weight:700; color:var(--text-main);">
                 Arrastra tu archivo aquí o haz clic para seleccionarlo
               </span>
@@ -195,7 +265,7 @@
 
         <!-- BOTÓN SUBMIT -->
         <div style="display:flex; justify-content:flex-end; gap:10px;">
-          <a href="/clientes" class="btn btn-secondary" style="padding:10px 18px;">Cancelar</a>
+          <a href="/clientes" class="btn btn-secondary" style="padding:10px 18px;">Volver a Clientes</a>
           <button type="submit" id="btnUpload" class="btn btn-primary" style="background:#10b981; padding:10px 28px; font-size:13px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
             <span data-icon="upload-cloud" style="width:16px; height:16px;"></span>
             Procesar y Acumular Movimientos
@@ -245,7 +315,182 @@
 
     </div>
 
+    <!-- SECCIÓN 2: GESTIÓN DE BANCOS, EDICIÓN Y ELIMINACIÓN CON RECÁLCULO -->
+    <div class="card" id="cardBanksManagement">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="font-size:17px; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+            <span data-icon="shield-check" style="width:20px; height:20px; color:#0284c7;"></span>
+            2. Entidades Bancarias y Archivos Vinculados
+          </h2>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+            Gestiona los bancos asociados a este cliente. Puedes <strong>editar el nombre del banco</strong> o <strong>eliminar movimientos por archivo</strong> con recálculo automático de ingresos, débitos y scoring crediticio.
+          </p>
+        </div>
+        <div id="selectedClientBadge" style="display:none;">
+          <span style="font-size:12px; font-weight:700; background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:5px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:6px;">
+            <span data-icon="users" style="width:14px; height:14px;"></span>
+            Cliente: <strong id="selectedClientNameText">-</strong>
+          </span>
+        </div>
+      </div>
+
+      <!-- BANNER DE NOTIFICACIÓN Y RECÁLCULO EN VIVO -->
+      <div id="recalcResultBox" style="display:none; margin-bottom:20px; background:#f0fdf4; border:1px solid #86efac; border-radius:12px; padding:18px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:34px; height:34px; border-radius:50%; background:#10b981; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <span data-icon="check-circle" style="width:20px; height:20px;"></span>
+            </div>
+            <div>
+              <h3 style="font-size:15px; font-weight:800; color:#065f46; margin:0;" id="recalcTitle">¡Recálculo Financiero y Clasificación Completados!</h3>
+              <p id="recalcMessage" style="font-size:12px; color:#047857; margin:3px 0 0 0;"></p>
+            </div>
+          </div>
+          <button type="button" onclick="document.getElementById('recalcResultBox').style.display='none'" style="background:transparent; border:none; color:#047857; font-size:18px; cursor:pointer; font-weight:700;">&times;</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; background:#fff; border:1px solid #bbf7d0; border-radius:8px; padding:12px; margin-top:14px;">
+          <div style="text-align:center;">
+            <span style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase;">Ops Eliminadas</span>
+            <div id="recalcDeletedCount" style="font-size:16px; font-weight:800; color:#be123c;">0</div>
+          </div>
+          <div style="text-align:center;">
+            <span style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase;">Ops Restantes</span>
+            <div id="recalcRemainingOps" style="font-size:16px; font-weight:800; color:#0284c7;">0</div>
+          </div>
+          <div style="text-align:center;">
+            <span style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase;">Ingresos Restantes</span>
+            <div id="recalcRemainingIncome" style="font-size:16px; font-weight:800; color:#10b981;">$0.00</div>
+          </div>
+          <div style="text-align:center;">
+            <span style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase;">Débitos Restantes</span>
+            <div id="recalcRemainingExpenses" style="font-size:16px; font-weight:800; color:#f43f5e;">$0.00</div>
+          </div>
+          <div style="text-align:center;">
+            <span style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase;">Nuevo Score FICO</span>
+            <div id="recalcNewScore" style="font-size:16px; font-weight:900; color:#1e293b;">-</div>
+          </div>
+          <div style="text-align:center;">
+            <span style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase;">Nueva Clasificación</span>
+            <div id="recalcNewDecisionBadge" style="margin-top:2px;">-</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+          <a id="btnReCalcGoSimulator" href="/simulador" class="btn btn-primary" style="background:#0284c7; font-size:11px; padding:7px 16px;">
+            Ver Análisis Completo en el Simulador →
+          </a>
+        </div>
+      </div>
+
+      <!-- ALERTA DE ÉXITO AL RENOMBRAR BANCO -->
+      <div id="renameSuccessAlert" style="display:none; padding:12px 16px; border-radius:8px; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; font-size:12px; font-weight:600; margin-bottom:16px;">
+        <span data-icon="check-circle" style="width:16px; height:16px; display:inline-block; vertical-align:middle; margin-right:6px;"></span>
+        <span id="renameSuccessMessage"></span>
+      </div>
+
+      <!-- CONTENEDOR DE LA TABLA DE BANCOS -->
+      <div id="banksListContainer">
+        <div style="text-align:center; padding:36px 16px; color:#94a3b8; font-size:13px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
+          <span data-icon="users" style="width:36px; height:36px; display:inline-block; margin-bottom:8px; opacity:0.6;"></span>
+          <p style="margin:0; font-weight:600;">Selecciona un cliente de la lista para ver sus bancos y archivos vinculados.</p>
+        </div>
+      </div>
+
+    </div>
+
   </main>
+
+  <!-- MODAL: EDITAR NOMBRE DE BANCO -->
+  <div id="modalRenameBank" class="modal-backdrop">
+    <div class="modal-box">
+      <button type="button" onclick="closeRenameModal()" class="modal-close">&times;</button>
+      
+      <div style="margin-bottom:16px;">
+        <h3 style="font-size:16px; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+          <span data-icon="edit-3" style="width:18px; height:18px; color:#0284c7;"></span>
+          Editar Nombre de la Entidad Bancaria
+        </h3>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+          Este cambio actualizará el nombre del banco en todas las transacciones vinculadas a este cliente.
+        </p>
+      </div>
+
+      <form id="formRenameBank" onsubmit="submitRenameBank(event)">
+        <input type="hidden" id="renameClientId">
+        <input type="hidden" id="renameOldBankName">
+
+        <div class="form-group">
+          <label>Nombre Actual del Banco</label>
+          <input type="text" id="renameOldBankNameDisplay" class="input-field" disabled style="background:#f1f5f9; color:#64748b; font-weight:600;">
+        </div>
+
+        <div class="form-group">
+          <label for="renameNewBankName">Nuevo Nombre para la Entidad *</label>
+          <input type="text" id="renameNewBankName" class="input-field" required placeholder="Ej. Banco Santander - Cuenta Corriente">
+        </div>
+
+        <!-- Presets rápidos para renombrar -->
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
+          <button type="button" onclick="document.getElementById('renameNewBankName').value='Banco Santander'" class="bank-preset-btn">Santander</button>
+          <button type="button" onclick="document.getElementById('renameNewBankName').value='Banco de Chile'" class="bank-preset-btn">Banco de Chile</button>
+          <button type="button" onclick="document.getElementById('renameNewBankName').value='Banco Estado'" class="bank-preset-btn">Banco Estado</button>
+          <button type="button" onclick="document.getElementById('renameNewBankName').value='Bci'" class="bank-preset-btn">Bci</button>
+          <button type="button" onclick="document.getElementById('renameNewBankName').value='Scotiabank'" class="bank-preset-btn">Scotiabank</button>
+          <button type="button" onclick="document.getElementById('renameNewBankName').value='Banco Falabella'" class="bank-preset-btn">Falabella</button>
+        </div>
+
+        <div id="renameErrorAlert" style="display:none; padding:10px; border-radius:6px; background:#fff1f2; border:1px solid #fecdd3; color:#9f1239; font-size:12px; font-weight:600; margin-bottom:14px;"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" onclick="closeRenameModal()" class="btn btn-secondary" style="font-size:12px; padding:8px 16px;">Cancelar</button>
+          <button type="submit" id="btnSubmitRename" class="btn btn-primary" style="background:#0284c7; font-size:12px; padding:8px 20px;">
+            Guardar Nombre
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAR ELIMINACIÓN DE MOVIMIENTOS -->
+  <div id="modalDeleteBank" class="modal-backdrop">
+    <div class="modal-box">
+      <button type="button" onclick="closeDeleteModal()" class="modal-close">&times;</button>
+      
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+        <div style="width:40px; height:40px; border-radius:50%; background:#fee2e2; color:#be123c; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <span data-icon="alert-triangle" style="width:22px; height:22px;"></span>
+        </div>
+        <div>
+          <h3 style="font-size:16px; font-weight:800; color:#991b1b; margin:0;">¿Eliminar Movimientos del Archivo?</h3>
+          <p style="font-size:12px; color:var(--text-muted); margin:3px 0 0 0;">Esta acción borrará los registros vinculados y recalculará los indicadores.</p>
+        </div>
+      </div>
+
+      <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:14px; margin-bottom:16px; font-size:12px; color:#881337; line-height:1.5;">
+        <p style="margin:0 0 6px 0;">
+          Estás por eliminar todos los movimientos asociados a:
+        </p>
+        <div style="background:#fff; border:1px solid #fecdd3; border-radius:6px; padding:8px 12px; font-size:12px;">
+          <div>🏦 <strong>Banco:</strong> <span id="delConfirmBankName" style="color:#0f172a; font-weight:700;"></span></div>
+          <div style="margin-top:4px;">📄 <strong>Archivo:</strong> <span id="delConfirmFileName" style="font-family:monospace; color:#0f172a;"></span></div>
+        </div>
+        <p style="margin:8px 0 0 0; font-size:11px; color:#be123c;">
+          ⚡ <strong>Recálculo automático:</strong> Al confirmar, el sistema recalculará los ingresos totales restantes, débitos continuos, saldo final y el score crediticio/clasificación FICO del cliente de forma inmediata.
+        </p>
+      </div>
+
+      <div id="deleteErrorAlert" style="display:none; padding:10px; border-radius:6px; background:#fff1f2; border:1px solid #fecdd3; color:#9f1239; font-size:12px; font-weight:600; margin-bottom:14px;"></div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary" style="font-size:12px; padding:8px 16px;">Cancelar</button>
+        <button type="button" id="btnConfirmDelete" onclick="executeDeleteBankMovements()" class="btn btn-primary" style="background:#be123c; font-size:12px; padding:8px 20px; box-shadow:0 4px 12px rgba(190,18,60,0.3);">
+          Sí, Eliminar y Recalcular
+        </button>
+      </div>
+    </div>
+  </div>
 
   <footer style="background:#fff; border-top:1px solid #e2e8f0; padding:16px; text-align:center; font-size:12px; color:#64748b; margin-top:auto;">
     CreditSense • Carga y Consolidación Multi-Banco • Base de Datos SQLite
@@ -253,13 +498,16 @@
 
   <script src="/static/js/icons.js"></script>
   <script>
+    let currentPendingDelete = { clientId: '', bankName: '', fileName: '' };
+
     document.addEventListener('DOMContentLoaded', () => {
       renderAllIcons();
       // Si viene ?client_id= en la URL, seleccionarlo automáticamente
       const urlParams = new URLSearchParams(window.location.search);
       const clientId = urlParams.get('client_id');
       if (clientId) {
-        document.getElementById('selectClient').value = clientId;
+        const select = document.getElementById('selectClient');
+        select.value = clientId;
         onClientChanged(clientId);
       }
     });
@@ -275,13 +523,307 @@
     }
 
     function onClientChanged(clientId) {
+      const summarySpan = document.getElementById('clientBanksSummary');
+      const badgeContainer = document.getElementById('selectedClientBadge');
+      const nameText = document.getElementById('selectedClientNameText');
+      const select = document.getElementById('selectClient');
+
       if (!clientId) {
-        document.getElementById('clientBanksSummary').innerText = '';
+        summarySpan.innerText = '';
+        badgeContainer.style.display = 'none';
+        document.getElementById('banksListContainer').innerHTML = `
+          <div style="text-align:center; padding:36px 16px; color:#94a3b8; font-size:13px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
+            <span data-icon="users" style="width:36px; height:36px; display:inline-block; margin-bottom:8px; opacity:0.6;"></span>
+            <p style="margin:0; font-weight:600;">Selecciona un cliente de la lista para ver sus bancos y archivos vinculados.</p>
+          </div>
+        `;
+        renderAllIcons();
         return;
       }
-      document.getElementById('clientBanksSummary').innerText = 'Cliente seleccionado para consolidar.';
+
+      const selectedOption = select.options[select.selectedIndex];
+      const clientName = selectedOption.getAttribute('data-name') || selectedOption.innerText;
+      nameText.innerText = clientName;
+      badgeContainer.style.display = 'inline-block';
+      summarySpan.innerText = `Cliente activo: ${clientName}. Cargando bancos asociados...`;
+
+      loadClientBanks(clientId);
     }
 
+    async function loadClientBanks(clientId) {
+      const container = document.getElementById('banksListContainer');
+      container.innerHTML = `
+        <div style="text-align:center; padding:24px; color:#64748b; font-size:13px;">
+          <div style="display:inline-block; width:24px; height:24px; border:3px solid #cbd5e1; border-top-color:#0284c7; border-radius:50%; animation:spin 1s linear infinite;"></div>
+          <p style="margin-top:8px;">Consultando bancos y archivos en base de datos...</p>
+        </div>
+      `;
+
+      try {
+        const resp = await fetch(`/api/client/${clientId}/banks`);
+        const data = await resp.json();
+
+        if (!data.success || !data.banks || data.banks.length === 0) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:32px 16px; color:#64748b; font-size:13px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
+              <span data-icon="alert-circle" style="width:32px; height:32px; display:inline-block; margin-bottom:6px; color:#94a3b8;"></span>
+              <p style="margin:0; font-weight:700; color:#334155;">Sin movimientos bancarios registrados</p>
+              <p style="margin:4px 0 0 0; font-size:11px; color:#94a3b8;">Usa el formulario superior para importar el primer estado de cuenta de este cliente.</p>
+            </div>
+          `;
+          document.getElementById('clientBanksSummary').innerText = 'Sin entidades registradas actualmente.';
+          renderAllIcons();
+          return;
+        }
+
+        const banks = data.banks;
+        document.getElementById('clientBanksSummary').innerText = `${banks.length} archivo(s) y banco(s) registrados.`;
+
+        let html = `
+          <div class="table-container">
+            <table class="table-banks">
+              <thead>
+                <tr>
+                  <th>Banco / Entidad</th>
+                  <th>Archivo Vinculado</th>
+                  <th style="text-align:center;">Movs</th>
+                  <th style="text-align:right;">Ingresos (+)</th>
+                  <th style="text-align:right;">Débitos (-)</th>
+                  <th style="text-align:right;">Flujo Neto</th>
+                  <th>Período</th>
+                  <th style="text-align:right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        banks.forEach(b => {
+          const netoClass = b.flujo_neto >= 0 ? '#10b981' : '#f43f5e';
+          const netoPrefix = b.flujo_neto >= 0 ? '+' : '';
+          const safeBank = escapeHtml(b.banco_origen);
+          const safeFile = escapeHtml(b.archivo_origen);
+
+          html += `
+            <tr>
+              <td>
+                <span class="badge-bank">
+                  <span data-icon="shield-check" style="width:13px; height:13px; color:#0284c7;"></span>
+                  <strong>${safeBank}</strong>
+                </span>
+              </td>
+              <td>
+                <span class="badge-file">
+                  📄 ${safeFile}
+                </span>
+              </td>
+              <td style="text-align:center; font-weight:800; color:#0284c7;">
+                ${b.total_movimientos}
+              </td>
+              <td style="text-align:right; font-weight:700; color:#10b981; font-family:monospace;">
+                +$${Number(b.ingresos).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}
+              </td>
+              <td style="text-align:right; font-weight:700; color:#f43f5e; font-family:monospace;">
+                -$${Number(b.egresos).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}
+              </td>
+              <td style="text-align:right; font-weight:800; color:${netoClass}; font-family:monospace;">
+                ${netoPrefix}$${Number(b.flujo_neto).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}
+              </td>
+              <td style="font-size:11px; color:#64748b;">
+                ${b.fecha_min || '-'} <span style="color:#cbd5e1;">➔</span> ${b.fecha_max || '-'}
+              </td>
+              <td style="text-align:right; white-space:nowrap;">
+                <div style="display:inline-flex; gap:6px;">
+                  <button type="button" onclick="openRenameModal('${clientId}', '${safeBank}')" class="btn-action-sm btn-edit-bank" title="Editar nombre del banco">
+                    ✏️ Renombrar
+                  </button>
+                  <button type="button" onclick="openDeleteModal('${clientId}', '${safeBank}', '${safeFile}')" class="btn-action-sm btn-delete-bank" title="Eliminar movimientos vinculados a este archivo y recalcular">
+                    🗑️ Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+
+        html += `
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        container.innerHTML = html;
+        renderAllIcons();
+
+      } catch (err) {
+        container.innerHTML = `
+          <div style="padding:16px; background:#fff1f2; color:#9f1239; border-radius:8px; font-size:12px;">
+            Error de conexión al cargar entidades bancarias del cliente.
+          </div>
+        `;
+      }
+    }
+
+    // Modal Renombrar Banco
+    function openRenameModal(clientId, oldBankName) {
+      document.getElementById('renameClientId').value = clientId;
+      document.getElementById('renameOldBankName').value = oldBankName;
+      document.getElementById('renameOldBankNameDisplay').value = oldBankName;
+      document.getElementById('renameNewBankName').value = oldBankName;
+      document.getElementById('renameErrorAlert').style.display = 'none';
+      document.getElementById('modalRenameBank').classList.add('open');
+      document.getElementById('renameNewBankName').focus();
+    }
+
+    function closeRenameModal() {
+      document.getElementById('modalRenameBank').classList.remove('open');
+    }
+
+    async function submitRenameBank(e) {
+      e.preventDefault();
+      const clientId = document.getElementById('renameClientId').value;
+      const oldBankName = document.getElementById('renameOldBankName').value;
+      const newBankName = document.getElementById('renameNewBankName').value.trim();
+      const errBox = document.getElementById('renameErrorAlert');
+      const btn = document.getElementById('btnSubmitRename');
+
+      if (!newBankName) {
+        errBox.innerText = "Ingresa un nuevo nombre para el banco.";
+        errBox.style.display = 'block';
+        return;
+      }
+
+      if (oldBankName === newBankName) {
+        closeRenameModal();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Guardando...";
+
+      try {
+        const resp = await fetch('/api/client/rename-bank', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: clientId,
+            old_bank_name: oldBankName,
+            new_bank_name: newBankName
+          })
+        });
+
+        const res = await resp.json();
+        if (res.success) {
+          closeRenameModal();
+          
+          // Mostrar aviso temporal de éxito
+          const alertBox = document.getElementById('renameSuccessAlert');
+          document.getElementById('renameSuccessMessage').innerText = res.message;
+          alertBox.style.display = 'block';
+          setTimeout(() => { alertBox.style.display = 'none'; }, 6000);
+
+          // Recargar tabla de bancos
+          loadClientBanks(clientId);
+        } else {
+          errBox.innerText = res.error || "Error al renombrar el banco.";
+          errBox.style.display = 'block';
+        }
+      } catch (err) {
+        errBox.innerText = "Error de red al actualizar banco.";
+        errBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Guardar Nombre";
+      }
+    }
+
+    // Modal Eliminar Movimientos
+    function openDeleteModal(clientId, bankName, fileName) {
+      currentPendingDelete = { clientId, bankName, fileName };
+      document.getElementById('delConfirmBankName').innerText = bankName;
+      document.getElementById('delConfirmFileName').innerText = fileName;
+      document.getElementById('deleteErrorAlert').style.display = 'none';
+      document.getElementById('modalDeleteBank').classList.add('open');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('modalDeleteBank').classList.remove('open');
+      currentPendingDelete = { clientId: '', bankName: '', fileName: '' };
+    }
+
+    async function executeDeleteBankMovements() {
+      const { clientId, bankName, fileName } = currentPendingDelete;
+      const btn = document.getElementById('btnConfirmDelete');
+      const errBox = document.getElementById('deleteErrorAlert');
+
+      btn.disabled = true;
+      btn.innerText = "Eliminando y recalculando...";
+
+      try {
+        const resp = await fetch('/api/client/delete-bank-movements', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: clientId,
+            banco_origen: bankName,
+            archivo_origen: fileName
+          })
+        });
+
+        const res = await resp.json();
+        if (res.success) {
+          closeDeleteModal();
+
+          // Renderizar panel de recálculo dinámico en vivo
+          const box = document.getElementById('recalcResultBox');
+          document.getElementById('recalcTitle').innerText = `¡Movimientos Eliminados y Recálculo Completado!`;
+          document.getElementById('recalcMessage').innerText = res.message;
+          document.getElementById('recalcDeletedCount').innerText = '-' + res.transacciones_eliminadas;
+          document.getElementById('recalcRemainingOps').innerText = res.transacciones_restantes;
+          document.getElementById('recalcRemainingIncome').innerText = '$' + Number(res.ingresos_restantes).toLocaleString('en-US', {minimumFractionDigits:2});
+          document.getElementById('recalcRemainingExpenses').innerText = '$' + Number(res.egresos_restantes).toLocaleString('en-US', {minimumFractionDigits:2});
+          document.getElementById('recalcNewScore').innerText = res.nuevo_score > 0 ? `${res.nuevo_score} / 850` : 'Sin datos';
+
+          // Badge de Decisión FICO
+          const decisionBadge = document.getElementById('recalcNewDecisionBadge');
+          const dec = (res.nueva_decision || '').toUpperCase();
+          if (dec === 'APROBADO') {
+            decisionBadge.innerHTML = `<span class="score-badge score-aprobado">✓ APROBADO (${res.nuevo_riesgo})</span>`;
+          } else if (dec === 'PRE_APROBADO_CONDICIONADO' || dec.includes('CONDICION')) {
+            decisionBadge.innerHTML = `<span class="score-badge score-preaprobado">⚡ CONDICIONADO (${res.nuevo_riesgo})</span>`;
+          } else if (dec === 'RECHAZADO') {
+            decisionBadge.innerHTML = `<span class="score-badge score-rechazado">✗ RECHAZADO (${res.nuevo_riesgo})</span>`;
+          } else {
+            decisionBadge.innerHTML = `<span class="score-badge score-sindatos">ℹ ${res.nueva_decision || 'SIN DATOS'}</span>`;
+          }
+
+          document.getElementById('btnReCalcGoSimulator').href = `/simulador?client=${res.perfil_key}`;
+          box.style.display = 'block';
+
+          // Refrescar tabla de bancos
+          loadClientBanks(clientId);
+
+          // Actualizar texto de candidato en el select si está disponible
+          const select = document.getElementById('selectClient');
+          const opt = select.options[select.selectedIndex];
+          if (opt) {
+            const clientName = opt.getAttribute('data-name');
+            opt.innerText = `${clientName} - ${res.transacciones_restantes} ops`;
+          }
+
+        } else {
+          errBox.innerText = res.error || "Error al eliminar movimientos.";
+          errBox.style.display = 'block';
+        }
+      } catch (err) {
+        errBox.innerText = "Error de red al procesar la eliminación.";
+        errBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Sí, Eliminar y Recalcular";
+      }
+    }
+
+    // Carga de Archivo Multi-Banco
     async function handleMultiBankUpload(e) {
       e.preventDefault();
       const clientSelect = document.getElementById('selectClient');
@@ -329,6 +871,13 @@
           const selectedOption = clientSelect.options[clientSelect.selectedIndex];
           const perfilKey = selectedOption.getAttribute('data-key') || res.perfil_key;
           document.getElementById('btnGoToSimulador').href = `/simulador?client=${perfilKey}`;
+
+          // Actualizar texto del selector con nuevas ops
+          const clientName = selectedOption.getAttribute('data-name');
+          selectedOption.innerText = `${clientName} - ${res.total_transacciones_cliente} ops`;
+
+          // Refrescar inmediatamente la lista de bancos vinculados
+          loadClientBanks(clientSelect.value);
         } else {
           errDiv.innerText = res.error || "Ocurrió un error al procesar el archivo.";
           errDiv.style.display = 'block';
@@ -348,6 +897,16 @@
       document.getElementById('dropZoneText').innerText = "Arrastra tu archivo aquí o haz clic para seleccionarlo";
       document.getElementById('successResultCard').style.display = 'none';
       document.getElementById('errorMessage').style.display = 'none';
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
   </script>
 </body>

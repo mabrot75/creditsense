@@ -122,5 +122,77 @@ class CreditAppTestCase(unittest.TestCase):
         self.assertGreater(res['transacciones_agregadas'], 0)
         self.assertGreater(res['total_transacciones_cliente'], total_tx_antes)
 
+    def test_client_banks_list_rename_and_delete_with_recalculation(self):
+        """Verifica listar bancos, renombrar un banco, y eliminar movimientos por archivo con recálculo."""
+        # 1. Crear un cliente con transacciones iniciales en 'Banco Alfa'
+        create_payload = {
+            'client_info': {
+                'id': 'CLI-TEST-BANKS-01',
+                'nombre': 'Cliente MultiBanco Test',
+                'rut_dni': '11.222.333-4',
+                'ocupacion': 'Ingeniero de Datos',
+                'empresa': 'Data Corp',
+                'tipo_contrato': 'Indefinido',
+                'antiguedad_laboral_anios': 4.0,
+                'antiguedad_bancaria_meses': 36
+            },
+            'monthly_data': [
+                {'periodo': '2026-01', 'ingresos': 3000.0, 'egresos': 1500.0, 'pagos_deuda': 200.0, 'sobregiros': 0},
+                {'periodo': '2026-02', 'ingresos': 3000.0, 'egresos': 1500.0, 'pagos_deuda': 200.0, 'sobregiros': 0},
+                {'periodo': '2026-03', 'ingresos': 3000.0, 'egresos': 1500.0, 'pagos_deuda': 200.0, 'sobregiros': 0},
+                {'periodo': '2026-04', 'ingresos': 3000.0, 'egresos': 1500.0, 'pagos_deuda': 200.0, 'sobregiros': 0},
+                {'periodo': '2026-05', 'ingresos': 3000.0, 'egresos': 1500.0, 'pagos_deuda': 200.0, 'sobregiros': 0},
+                {'periodo': '2026-06', 'ingresos': 3000.0, 'egresos': 1500.0, 'pagos_deuda': 200.0, 'sobregiros': 0}
+            ],
+            'saldo_inicial': 2000.0
+        }
+        res_create = self.app.post('/api/save-client', data=json.dumps(create_payload), content_type='application/json')
+        self.assertEqual(res_create.status_code, 200)
+
+        # 2. Consultar entidades bancarias vinculadas
+        res_banks = self.app.get('/api/client/CLI-TEST-BANKS-01/banks')
+        self.assertEqual(res_banks.status_code, 200)
+        banks_data = json.loads(res_banks.data)
+        self.assertTrue(banks_data['success'])
+        self.assertGreater(len(banks_data['banks']), 0)
+        initial_bank_name = banks_data['banks'][0]['banco_origen']
+        initial_file_name = banks_data['banks'][0]['archivo_origen']
+
+        # 3. Renombrar banco de 'Banco Principal' (o nombre inicial) a 'Banco Santander Central'
+        res_rename = self.app.post('/api/client/rename-bank', data=json.dumps({
+            'client_id': 'CLI-TEST-BANKS-01',
+            'old_bank_name': initial_bank_name,
+            'new_bank_name': 'Banco Santander Central'
+        }), content_type='application/json')
+        self.assertEqual(res_rename.status_code, 200)
+        self.assertTrue(json.loads(res_rename.data)['success'])
+
+        # Verificar que la lista de bancos ahora refleja 'Banco Santander Central'
+        res_banks_after = self.app.get('/api/client/CLI-TEST-BANKS-01/banks')
+        banks_after_data = json.loads(res_banks_after.data)
+        bank_names = [b['banco_origen'] for b in banks_after_data['banks']]
+        self.assertIn('Banco Santander Central', bank_names)
+        self.assertNotIn(initial_bank_name, bank_names)
+
+        # 4. Eliminar los movimientos vinculados a ese banco y archivo, validando el recálculo
+        res_delete_movs = self.app.post('/api/client/delete-bank-movements', data=json.dumps({
+            'client_id': 'CLI-TEST-BANKS-01',
+            'banco_origen': 'Banco Santander Central',
+            'archivo_origen': initial_file_name
+        }), content_type='application/json')
+        self.assertEqual(res_delete_movs.status_code, 200)
+        delete_movs_data = json.loads(res_delete_movs.data)
+        self.assertTrue(delete_movs_data['success'])
+        self.assertGreater(delete_movs_data['transacciones_eliminadas'], 0)
+        self.assertEqual(delete_movs_data['transacciones_restantes'], 0)
+        self.assertEqual(delete_movs_data['ingresos_restantes'], 0.0)
+        self.assertEqual(delete_movs_data['egresos_restantes'], 0.0)
+        self.assertEqual(delete_movs_data['nuevo_score'], 0)
+        self.assertEqual(delete_movs_data['nueva_decision'], 'SIN_DATOS')
+
+        # 5. Limpieza: Eliminar cliente de prueba
+        self.app.post('/api/client/delete', data=json.dumps({'client_id': 'CLI-TEST-BANKS-01'}), content_type='application/json')
+
+
 if __name__ == '__main__':
     unittest.main()

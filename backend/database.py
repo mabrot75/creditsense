@@ -1,6 +1,7 @@
 """
 Manejador de Base de Datos SQLite para Clientes y Transacciones Crediticias.
-Almacena y gestiona clientes (creación, edición, eliminación) y acumulación multi-banco de movimientos.
+Almacena y gestiona clientes (CRUD), entidades bancarias vinculadas, edición de nombres de bancos
+y eliminación selectiva de movimientos por archivo/banco con re-cálculo financiero continuo.
 """
 
 import os
@@ -43,12 +44,13 @@ def init_db():
     )
     """)
 
-    # Tabla de Transacciones con columna banco_origen
+    # Tabla de Transacciones con banco_origen y archivo_origen
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS transacciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         cliente_id TEXT NOT NULL,
         banco_origen TEXT DEFAULT 'Banco Principal',
+        archivo_origen TEXT DEFAULT 'Movimientos_Iniciales',
         fecha TEXT NOT NULL,
         descripcion TEXT NOT NULL,
         categoria TEXT NOT NULL,
@@ -59,11 +61,16 @@ def init_db():
     )
     """)
 
-    # Migración: asegurar que la columna banco_origen exista en transacciones
+    # Migraciones seguras si la base de datos ya existía
     try:
         cursor.execute("ALTER TABLE transacciones ADD COLUMN banco_origen TEXT DEFAULT 'Banco Principal'")
     except sqlite3.OperationalError:
-        pass  # Ya existe la columna
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE transacciones ADD COLUMN archivo_origen TEXT DEFAULT 'Movimientos_Iniciales'")
+    except sqlite3.OperationalError:
+        pass
 
     conn.commit()
 
@@ -141,6 +148,7 @@ def save_client_to_db(client_info: Dict[str, Any], transactions: List[Dict[str, 
             tx_tuples.append((
                 client_id,
                 str(tx.get('banco_origen', 'Banco Principal')),
+                str(tx.get('archivo_origen', 'Movimientos_Iniciales')),
                 str(tx.get('fecha', datetime.now().strftime('%Y-%m-%d'))),
                 str(tx.get('descripcion', 'Movimiento registrado')),
                 str(tx.get('categoria', 'Otros')),
@@ -150,8 +158,8 @@ def save_client_to_db(client_info: Dict[str, Any], transactions: List[Dict[str, 
             ))
 
         cursor.executemany("""
-        INSERT INTO transacciones (cliente_id, banco_origen, fecha, descripcion, categoria, tipo, monto, saldo_resultante)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO transacciones (cliente_id, banco_origen, archivo_origen, fecha, descripcion, categoria, tipo, monto, saldo_resultante)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, tx_tuples)
 
     conn.commit()
@@ -212,6 +220,7 @@ def delete_client_by_id(client_id: str) -> bool:
 
 def append_transactions_to_client(client_id: str, new_transactions: List[Dict[str, Any]], 
                                   banco_origen: str = 'Banco Adicional', 
+                                  archivo_origen: str = 'archivo_importado.xlsx',
                                   reemplazar: bool = False) -> int:
     """
     Acumula / consolida movimientos de un nuevo banco o archivo al historial existente del cliente.
@@ -228,6 +237,7 @@ def append_transactions_to_client(client_id: str, new_transactions: List[Dict[st
         tx_tuples.append((
             client_id,
             banco_origen,
+            archivo_origen,
             str(tx.get('fecha', datetime.now().strftime('%Y-%m-%d'))),
             str(tx.get('descripcion', 'Movimiento importado')),
             str(tx.get('categoria', 'Otros')),
@@ -237,8 +247,8 @@ def append_transactions_to_client(client_id: str, new_transactions: List[Dict[st
         ))
 
     cursor.executemany("""
-    INSERT INTO transacciones (cliente_id, banco_origen, fecha, descripcion, categoria, tipo, monto, saldo_resultante)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO transacciones (cliente_id, banco_origen, archivo_origen, fecha, descripcion, categoria, tipo, monto, saldo_resultante)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, tx_tuples)
 
     # Recalcular saldos acumulados cronológicamente
@@ -248,6 +258,113 @@ def append_transactions_to_client(client_id: str, new_transactions: List[Dict[st
     total_added = len(tx_tuples)
     conn.close()
     return total_added
+
+
+def rename_bank_for_client(client_id: str, old_bank_name: str, new_bank_name: str) -> bool:
+    """
+    Permite editar y renombrar una entidad bancaria asociada a un cliente,
+    actualizando todas sus transacciones vinculadas.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    UPDATE transacciones 
+    SET banco_origen = ? 
+    WHERE cliente_id = ? AND banco_origen = ?
+    """, (new_bank_name.strip(), client_id, old_bank_name.strip()))
+
+    affected = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return affected > 0
+
+
+def delete_bank_movements(client_id: str, banco_origen: str, archivo_origen: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Elimina los movimientos de un cliente vinculados a un banco específico y/o archivo,
+    y RECALCULA automáticamente los saldos continuos de las transacciones restantes.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if archivo_origen:
+        cursor.execute("""
+        DELETE FROM transacciones 
+        WHERE cliente_id = ? AND banco_origen = ? AND archivo_origen = ?
+        """, (client_id, banco_origen, archivo_origen))
+    else:
+        cursor.execute("""
+        DELETE FROM transacciones 
+        WHERE cliente_id = ? AND banco_origen = ?
+        """, (client_id, banco_origen))
+
+    deleted_count = cursor.rowcount
+
+    # Recalcular saldos continuos para las transacciones que quedaron
+    _recalculate_cumulative_balances(cursor, client_id)
+    conn.commit()
+
+    # Obtener totales restantes
+    cursor.execute("""
+    SELECT 
+        COUNT(*) as total_restante,
+        COALESCE(SUM(CASE WHEN tipo LIKE '%ING%' THEN monto ELSE 0 END), 0) as ingresos_restantes,
+        COALESCE(SUM(CASE WHEN tipo LIKE '%EGR%' THEN monto ELSE 0 END), 0) as egresos_restantes
+    FROM transacciones 
+    WHERE cliente_id = ?
+    """, (client_id,))
+    row = cursor.fetchone()
+
+    conn.close()
+
+    return {
+        'transacciones_eliminadas': deleted_count,
+        'transacciones_restantes': row['total_restante'],
+        'ingresos_restantes': round(float(row['ingresos_restantes']), 2),
+        'egresos_restantes': round(float(row['egresos_restantes']), 2)
+    }
+
+
+def get_client_banks_and_files(client_id: str) -> List[Dict[str, Any]]:
+    """
+    Obtiene el desglose de bancos y archivos vinculados a un cliente,
+    mostrando conteo de movimientos, ingresos y egresos aportados por cada archivo/banco.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT 
+        banco_origen,
+        archivo_origen,
+        COUNT(*) as total_movimientos,
+        COALESCE(SUM(CASE WHEN tipo LIKE '%ING%' THEN monto ELSE 0 END), 0) as ingresos,
+        COALESCE(SUM(CASE WHEN tipo LIKE '%EGR%' THEN monto ELSE 0 END), 0) as egresos,
+        MIN(fecha) as fecha_min,
+        MAX(fecha) as fecha_max
+    FROM transacciones
+    WHERE cliente_id = ?
+    GROUP BY banco_origen, archivo_origen
+    ORDER BY MAX(fecha) DESC, id DESC
+    """, (client_id,))
+
+    rows = cursor.fetchall()
+    result = []
+    for r in rows:
+        result.append({
+            'banco_origen': r['banco_origen'] or 'Banco Principal',
+            'archivo_origen': r['archivo_origen'] or 'Movimientos_Iniciales',
+            'total_movimientos': r['total_movimientos'],
+            'ingresos': round(float(r['ingresos']), 2),
+            'egresos': round(float(r['egresos']), 2),
+            'flujo_neto': round(float(r['ingresos']) - float(r['egresos']), 2),
+            'fecha_min': r['fecha_min'],
+            'fecha_max': r['fecha_max']
+        })
+
+    conn.close()
+    return result
 
 
 def _recalculate_cumulative_balances(cursor, client_id: str):
@@ -327,7 +444,7 @@ def get_client_by_key(perfil_key: str) -> Tuple[Optional[Dict[str, Any]], List[D
         return None, []
 
     cursor.execute("""
-    SELECT fecha, descripcion, categoria, tipo, monto, saldo_resultante, banco_origen
+    SELECT fecha, descripcion, categoria, tipo, monto, saldo_resultante, banco_origen, archivo_origen
     FROM transacciones 
     WHERE cliente_id = ? 
     ORDER BY fecha ASC, id ASC
@@ -398,7 +515,8 @@ def generate_transactions_from_monthly_inputs(monthly_data: List[Dict[str, Any]]
             'tipo': 'INGRESO',
             'monto': round(ingresos_total, 2),
             'saldo_resultante': round(running_balance, 2),
-            'banco_origen': 'Banco Principal'
+            'banco_origen': 'Banco Principal',
+            'archivo_origen': 'Movimientos_Iniciales'
         })
 
         # 2. Vivienda
@@ -412,7 +530,8 @@ def generate_transactions_from_monthly_inputs(monthly_data: List[Dict[str, Any]]
                 'tipo': 'EGRESO',
                 'monto': gasto_vivienda,
                 'saldo_resultante': round(running_balance, 2),
-                'banco_origen': 'Banco Principal'
+                'banco_origen': 'Banco Principal',
+                'archivo_origen': 'Movimientos_Iniciales'
             })
 
         # 3. Cuota Crédito
@@ -425,7 +544,8 @@ def generate_transactions_from_monthly_inputs(monthly_data: List[Dict[str, Any]]
                 'tipo': 'EGRESO',
                 'monto': round(deuda_mensual, 2),
                 'saldo_resultante': round(running_balance, 2),
-                'banco_origen': 'Banco Principal'
+                'banco_origen': 'Banco Principal',
+                'archivo_origen': 'Movimientos_Iniciales'
             })
 
         # 4. Supermercado
@@ -440,7 +560,8 @@ def generate_transactions_from_monthly_inputs(monthly_data: List[Dict[str, Any]]
                 'tipo': 'EGRESO',
                 'monto': gasto_super,
                 'saldo_resultante': round(running_balance, 2),
-                'banco_origen': 'Banco Principal'
+                'banco_origen': 'Banco Principal',
+                'archivo_origen': 'Movimientos_Iniciales'
             })
 
         # 5. Ocio / Tarjeta
@@ -454,7 +575,8 @@ def generate_transactions_from_monthly_inputs(monthly_data: List[Dict[str, Any]]
                 'tipo': 'EGRESO',
                 'monto': gasto_varios,
                 'saldo_resultante': round(running_balance, 2),
-                'banco_origen': 'Banco Principal'
+                'banco_origen': 'Banco Principal',
+                'archivo_origen': 'Movimientos_Iniciales'
             })
 
         # 6. Sobregiros
@@ -472,7 +594,8 @@ def generate_transactions_from_monthly_inputs(monthly_data: List[Dict[str, Any]]
                     'tipo': 'EGRESO',
                     'monto': 35.0,
                     'saldo_resultante': round(running_balance, 2),
-                    'banco_origen': 'Banco Principal'
+                    'banco_origen': 'Banco Principal',
+                    'archivo_origen': 'Movimientos_Iniciales'
                 })
 
     return transactions
