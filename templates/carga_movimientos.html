@@ -210,18 +210,8 @@
 
         <!-- SELECCIONAR BANCO DE ORIGEN -->
         <div class="form-group" style="margin-top:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-            <label for="bancoOrigen">Banco o Entidad Financiera de Origen *</label>
-            <div style="display:flex; gap:4px; flex-wrap:wrap;">
-              <button type="button" onclick="setBankName('Banco Santander')" class="bank-preset-btn">Santander</button>
-              <button type="button" onclick="setBankName('Banco de Chile')" class="bank-preset-btn">Banco de Chile</button>
-              <button type="button" onclick="setBankName('Banco Estado')" class="bank-preset-btn">Banco Estado</button>
-              <button type="button" onclick="setBankName('Bci')" class="bank-preset-btn">Bci</button>
-              <button type="button" onclick="setBankName('Scotiabank')" class="bank-preset-btn">Scotiabank</button>
-              <button type="button" onclick="setBankName('Banco Falabella')" class="bank-preset-btn">Falabella</button>
-            </div>
-          </div>
-          <input type="text" id="bancoOrigen" name="banco_origen" class="input-field" placeholder="Ej. Banco Santander / Cuenta Corriente 002" required value="Banco Santander">
+          <label for="bancoOrigen">Banco o Entidad Financiera de Origen *</label>
+          <input type="text" id="bancoOrigen" name="banco_origen" class="input-field" placeholder="Ingresa el nombre del banco o institución (ej. Banco Principal, Cuenta Ahorros)" required value="">
         </div>
 
         <!-- MODO DE CARGA: ACUMULACIÓN MULTI-BANCO -->
@@ -426,19 +416,9 @@
           <input type="text" id="renameOldBankNameDisplay" class="input-field" disabled style="background:#f1f5f9; color:#64748b; font-weight:600;">
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom:16px;">
           <label for="renameNewBankName">Nuevo Nombre para la Entidad *</label>
-          <input type="text" id="renameNewBankName" class="input-field" required placeholder="Ej. Banco Santander - Cuenta Corriente">
-        </div>
-
-        <!-- Presets rápidos para renombrar -->
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
-          <button type="button" onclick="document.getElementById('renameNewBankName').value='Banco Santander'" class="bank-preset-btn">Santander</button>
-          <button type="button" onclick="document.getElementById('renameNewBankName').value='Banco de Chile'" class="bank-preset-btn">Banco de Chile</button>
-          <button type="button" onclick="document.getElementById('renameNewBankName').value='Banco Estado'" class="bank-preset-btn">Banco Estado</button>
-          <button type="button" onclick="document.getElementById('renameNewBankName').value='Bci'" class="bank-preset-btn">Bci</button>
-          <button type="button" onclick="document.getElementById('renameNewBankName').value='Scotiabank'" class="bank-preset-btn">Scotiabank</button>
-          <button type="button" onclick="document.getElementById('renameNewBankName').value='Banco Falabella'" class="bank-preset-btn">Falabella</button>
+          <input type="text" id="renameNewBankName" class="input-field" required placeholder="Ingresa el nuevo nombre de la entidad">
         </div>
 
         <div id="renameErrorAlert" style="display:none; padding:10px; border-radius:6px; background:#fff1f2; border:1px solid #fecdd3; color:#9f1239; font-size:12px; font-weight:600; margin-bottom:14px;"></div>
