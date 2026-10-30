@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="bgF2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+  </defs>
+  <rect width="160" height="160" rx="80" fill="url(#bgF2)" />
+  <!-- Hair bun -->
+  <circle cx="80" cy="40" r="16" fill="#78350f" />
+  <!-- Neck -->
+  <rect x="73" y="86" width="14" height="18" rx="4" fill="#fde68a" />
+  <!-- Face -->
+  <ellipse cx="80" cy="68" rx="22" ry="25" fill="#fef3c7" />
+  <!-- Hair front -->
+  <path d="M58 64 C64 48, 96 48, 102 64 C90 56, 70 56, 58 64 Z" fill="#92400e" />
+  <!-- Eyes -->
+  <circle cx="73" cy="67" r="2.5" fill="#451a03" />
+  <circle cx="87" cy="67" r="2.5" fill="#451a03" />
+  <!-- Glasses -->
+  <rect x="66" y="62" width="13" height="10" rx="3" stroke="#0284c7" stroke-width="1.8" fill="none" />
+  <rect x="81" y="62" width="13" height="10" rx="3" stroke="#0284c7" stroke-width="1.8" fill="none" />
+  <line x1="79" y1="67" x2="81" y2="67" stroke="#0284c7" stroke-width="1.8" />
+  <!-- Smile -->
+  <path d="M76 79 Q80 82 84 79" stroke="#b45309" stroke-width="2" fill="none" stroke-linecap="round" />
+  <!-- Clothes -->
+  <path d="M44 136 C44 110, 60 102, 80 102 C100 102, 116 110, 116 136 Z" fill="#0f172a" />
+  <path d="M73 102 L80 116 L87 102 Z" fill="#38bdf8" />
+</svg>

@@ -175,6 +175,12 @@ def update_client_info(client_id: str, updated_info: Dict[str, Any]) -> bool:
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    avatar_val = updated_info.get('avatar')
+    if not avatar_val:
+        cursor.execute("SELECT avatar FROM clientes WHERE id = ?", (client_id,))
+        row = cursor.fetchone()
+        avatar_val = row['avatar'] if row and row['avatar'] else '/static/uploads/avatars/default_avatar.svg'
+
     cursor.execute("""
     UPDATE clientes SET
         nombre = ?,
@@ -194,7 +200,7 @@ def update_client_info(client_id: str, updated_info: Dict[str, Any]) -> bool:
         updated_info.get('tipo_contrato'),
         float(updated_info.get('antiguedad_laboral_anios', 1.0)),
         int(updated_info.get('antiguedad_bancaria_meses', 12)),
-        updated_info.get('avatar'),
+        avatar_val,
         client_id
     ))
 
@@ -485,6 +491,55 @@ def get_client_by_id(client_id: str) -> Optional[Dict[str, Any]]:
     if row:
         return dict(row)
     return None
+
+
+def get_client_full_data(client_id: str) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Obtiene toda la información del cliente y sus transacciones consolidadas por ID de cliente."""
+    client = get_client_by_id(client_id)
+    if not client:
+        return None, []
+    return get_client_by_key(client['perfil_key'])
+
+
+def extract_monthly_summary_from_transactions(transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Calcula el desglose mensual (ingresos, egresos, deudas, sobregiros) a partir de transacciones."""
+    months = {}
+    for tx in transactions:
+        fecha = str(tx.get('fecha', ''))
+        periodo = fecha[:7] if len(fecha) >= 7 else '2026-05'
+        if periodo not in months:
+            months[periodo] = {
+                'periodo': periodo,
+                'ingresos': 0.0,
+                'egresos': 0.0,
+                'pagos_deuda': 0.0,
+                'sobregiros': 0
+            }
+
+        tipo = str(tx.get('tipo', '')).upper()
+        monto = float(tx.get('monto', 0.0))
+        cat = str(tx.get('categoria', '')).lower()
+        desc = str(tx.get('descripcion', '')).lower()
+
+        if 'ING' in tipo:
+            months[periodo]['ingresos'] += monto
+        else:
+            months[periodo]['egresos'] += monto
+            if 'deuda' in cat or 'prestamo' in cat or 'cuota' in desc or 'credito' in cat:
+                months[periodo]['pagos_deuda'] += monto
+            if 'sobregiro' in cat or 'sobregiro' in desc:
+                months[periodo]['sobregiros'] += 1
+
+    result = []
+    for p in sorted(months.keys()):
+        result.append({
+            'periodo': p,
+            'ingresos': round(months[p]['ingresos'], 2),
+            'egresos': round(months[p]['egresos'], 2),
+            'pagos_deuda': round(months[p]['pagos_deuda'], 2),
+            'sobregiros': months[p]['sobregiros']
+        })
+    return result
 
 
 def generate_transactions_from_monthly_inputs(monthly_data: List[Dict[str, Any]], initial_balance: float = 1000.0) -> List[Dict[str, Any]]:

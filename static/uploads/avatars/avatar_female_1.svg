@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="bgF1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+  </defs>
+  <rect width="160" height="160" rx="80" fill="url(#bgF1)" />
+  <!-- Hair back -->
+  <path d="M48 68 C45 38, 115 38, 112 68 C115 100, 118 120, 112 135 C100 138, 60 138, 48 135 C42 120, 45 100, 48 68 Z" fill="#312e81" />
+  <!-- Neck -->
+  <rect x="72" y="86" width="16" height="20" rx="4" fill="#fed7aa" />
+  <!-- Face -->
+  <ellipse cx="80" cy="68" rx="23" ry="26" fill="#ffedd5" />
+  <!-- Hair bangs -->
+  <path d="M57 60 C65 44, 95 44, 103 60 C98 52, 62 52, 57 60 Z" fill="#4338ca" />
+  <!-- Eyes -->
+  <circle cx="72" cy="67" r="2.5" fill="#1e1b4b" />
+  <circle cx="88" cy="67" r="2.5" fill="#1e1b4b" />
+  <!-- Smile -->
+  <path d="M75 78 Q80 82 85 78" stroke="#e11d48" stroke-width="2" fill="none" stroke-linecap="round" />
+  <!-- Clothes -->
+  <path d="M42 136 C42 110, 60 102, 80 102 C100 102, 118 110, 118 136 Z" fill="#ffffff" />
+  <path d="M74 102 L80 114 L86 102 Z" fill="#ec4899" />
+</svg>

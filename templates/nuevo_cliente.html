@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registrar Nuevo Candidato | CreditSense</title>
+  <title>Carga y Edición de Cliente | CreditSense</title>
   
   <link rel="stylesheet" href="/static/css/style.css">
   
@@ -13,6 +13,7 @@
       --accent-sky: #0284c7;
       --accent-sky-hover: #0369a1;
       --accent-indigo: #4f46e5;
+      --accent-emerald: #10b981;
       --bg-page: #f8fafc;
       --bg-card: #ffffff;
       --border-card: #e2e8f0;
@@ -30,10 +31,17 @@
       margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column;
     }
     .top-header {
-      background: var(--primary-dark); color: #fff; padding: 0 20px; height: 64px;
+      background: var(--primary-dark); color: #fff; padding: 0 24px; height: 64px;
       display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50;
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 14px;
+      border-radius: 8px; transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
     .form-container {
       max-width: 1080px; margin: 28px auto; padding: 0 20px; width: 100%; display: flex; flex-direction: column; gap: 24px;
     }
@@ -72,7 +80,7 @@
       transition: border-color 0.15s;
     }
     .input-field:focus, select:focus {
-      border-color: var(--accent-sky); ring: 2px rgba(2,132,199,0.2);
+      border-color: var(--accent-sky);
     }
     .table-input {
       width: 100%; font-size: 12px; padding: 6px 8px; border: 1px solid #cbd5e1;
@@ -106,6 +114,34 @@
     .kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
     .kpi-val { font-size: 18px; font-weight: 800; color: var(--text-main); margin-top: 2px; }
 
+    /* Componente de Foto / Avatar */
+    .avatar-upload-box {
+      display: flex; align-items: center; gap: 18px; background: #f8fafc;
+      border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 16px;
+    }
+    .avatar-preview-wrap {
+      position: relative; width: 80px; height: 80px; flex-shrink: 0;
+    }
+    .avatar-img-circle {
+      width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+      border: 3px solid #0284c7; box-shadow: 0 4px 10px rgba(0,0,0,0.1); background: #fff;
+    }
+    .avatar-camera-btn {
+      position: absolute; bottom: 0; right: 0; width: 28px; height: 28px;
+      border-radius: 50%; background: #0284c7; color: #fff; border: 2px solid #fff;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .avatar-camera-btn:hover { background: #0369a1; }
+
+    /* Modos de Trabajo */
+    .mode-badge {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;
+      padding: 4px 10px; border-radius: 999px;
+    }
+    .mode-new { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .mode-edit { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
     /* Modal de confirmación */
     .modal-backdrop {
       position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px);
@@ -123,37 +159,86 @@
 
   <!-- TOP HEADER -->
   <header class="top-header">
-    <div style="max-width: 1080px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: space-between;">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #0284c7 0%, #4f46e5 100%); display:flex; align-items:center; justify-content:center; color:#fff;">
-          <span data-icon="shield-check" style="width:20px; height:20px;"></span>
-        </div>
-        <div>
-          <span style="font-size:18px; font-weight:800; color:#fff;">CreditSense</span>
-          <span style="font-size:11px; background:rgba(2,132,199,0.3); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:999px; margin-left:8px; font-weight:600;">
-            Alta de Nuevo Cliente
-          </span>
-        </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, #0284c7 0%, #4f46e5 100%); display:flex; align-items:center; justify-content:center; color:#fff;">
+        <span data-icon="shield-check" style="width:22px; height:22px;"></span>
       </div>
-
-      <a href="/" class="btn btn-outline" style="color:#fff; background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.2); font-size:12px; padding:6px 14px;">
-        ← Volver al Dashboard
-      </a>
+      <div>
+        <span style="font-size:18px; font-weight:800; color:#fff;">CreditSense</span>
+        <span style="font-size:11px; background:rgba(2,132,199,0.3); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:999px; margin-left:8px; font-weight:600;">
+          Carga y Edición de Cliente
+        </span>
+      </div>
     </div>
+
+    <nav class="nav-links">
+      <a href="/" class="nav-link">
+        <span data-icon="shield-check" style="width:14px; height:14px;"></span> Inicio
+      </a>
+      <a href="/clientes" class="nav-link">
+        <span data-icon="users" style="width:14px; height:14px;"></span> 1. Clientes
+      </a>
+      <a href="/carga-movimientos" class="nav-link">
+        <span data-icon="upload-cloud" style="width:14px; height:14px;"></span> 2. Carga Movimientos
+      </a>
+      <a href="/simulador" class="nav-link">
+        <span data-icon="calculator" style="width:14px; height:14px;"></span> 3. Simulador
+      </a>
+    </nav>
   </header>
 
   <!-- FORM CONTAINER -->
   <main class="form-container">
     
+    <!-- BARRA SUPERIOR DE MODO: NUEVO vs EDITAR EXISTENTE -->
+    <div class="card" style="padding:18px 22px; margin-bottom:0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span id="badgeCurrentMode" class="mode-badge mode-new">
+            ➕ Modo: Nuevo Candidato
+          </span>
+          <span style="font-size:12px; color:var(--text-muted);" id="modeDescriptionText">
+            Completa los datos y sube la foto para registrar un cliente desde cero.
+          </span>
+        </div>
+
+        <!-- SELECTOR PARA CARGAR Y EDITAR UN CLIENTE EXISTENTE -->
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <label for="selectExistingClient" style="font-size:12px; font-weight:700; color:#334155;">
+            ✏️ O editar cliente existente:
+          </label>
+          <select id="selectExistingClient" style="font-size:12px; padding:6px 12px; min-width:260px;" onchange="onSelectExistingClient(this.value)">
+            <option value="">-- Seleccionar cliente para editar --</option>
+            {% for c in candidates %}
+              <option value="{{ c.client_info.id }}" {% if selected_client_id == c.client_info.id %}selected{% endif %}>
+                {{ c.client_info.nombre }} ({{ c.client_info.rut_dni }}) - {{ c.total_transacciones }} ops
+              </option>
+            {% endfor %}
+          </select>
+          <button type="button" onclick="switchToNewClientMode()" class="btn btn-outline" style="font-size:11px; padding:6px 12px;">
+            Limpiar / Crear Nuevo
+          </button>
+        </div>
+      </div>
+
+      <!-- AVISO DE EDICIÓN ACTIVA -->
+      <div id="editingBanner" style="display:none; margin-top:14px; background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; font-size:12px; color:#92400e;">
+        <strong>Modo Edición Activado:</strong> Modificando perfil completo y movimientos de <span id="bannerClientName" style="font-weight:800;">-</span>. Puedes cambiar su foto, datos laborales o flujos mensuales.
+      </div>
+    </div>
+
+    <!-- ENCABEZADO Y PLANTILLAS RÁPIDAS -->
     <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;">
       <div>
-        <h1 style="font-size:22px; font-weight:900; color:var(--text-main);">Registro de Candidato Crediticio</h1>
-        <p style="font-size:13px; color:var(--text-muted); margin-top:2px;">
-          Ingresa los datos personales y el historial de movimientos de los últimos 6 meses para evaluar scoring bancario.
+        <h1 id="pageMainTitle" style="font-size:22px; font-weight:900; color:var(--text-main); margin:0;">
+          Carga y Configuración del Perfil del Cliente
+        </h1>
+        <p style="font-size:13px; color:var(--text-muted); margin:4px 0 0 0;">
+          Administra la información completa del cliente, <strong>selecciona su foto o imagen de perfil</strong> y parametriza los 6 meses de flujo de caja.
         </p>
       </div>
 
-      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <div id="presetsBox" style="display:flex; gap:6px; flex-wrap:wrap;">
         <span style="font-size:11px; font-weight:700; color:var(--text-muted); align-self:center; margin-right:4px;">Plantillas rápidas:</span>
         <button type="button" onclick="loadPreset('excelente')" class="btn-preset">🌟 Perfil Solvente (A+)</button>
         <button type="button" onclick="loadPreset('medio')" class="btn-preset">⚖️ Perfil Medio / Freelance</button>
@@ -162,17 +247,62 @@
     </div>
 
     <form id="newClientForm" onsubmit="handleSaveClient(event)" style="display:flex; flex-direction:column; gap:24px;">
-      
-      <!-- CARD 1: DATOS PERSONALES Y LABORALES -->
+      <input type="hidden" id="editClientId" value="">
+
+      <!-- CARD 1: FOTO Y DATOS PERSONALES/LABORALES -->
       <div class="card">
         <div class="section-header">
           <span class="section-title">
             <span data-icon="users" style="width:18px; height:18px; color:var(--accent-sky);"></span>
-            1. Información Personal y Laboral del Candidato
+            1. Foto y Perfil Completo del Cliente
           </span>
           <span style="font-size:11px; font-weight:600; color:var(--text-muted);">Campos requeridos (*)</span>
         </div>
 
+        <!-- COMPONENTE: SELECCIÓN Y SUBIDA DE FOTO DEL CLIENTE -->
+        <div class="avatar-upload-box" style="margin-bottom:20px;">
+          <div class="avatar-preview-wrap">
+            <img id="clientAvatarPreview" src="/static/uploads/avatars/default_avatar.svg" alt="Foto del Cliente" class="avatar-img-circle" onerror="this.src='/static/uploads/avatars/default_avatar.svg'">
+            <button type="button" onclick="document.getElementById('clientAvatarFileInput').click()" class="avatar-camera-btn" title="Seleccionar foto desde tu equipo">
+              📷
+            </button>
+          </div>
+
+          <div style="flex:1;">
+            <label style="font-size:12px; font-weight:800; color:var(--text-main); display:block; margin-bottom:4px;">
+              Foto / Imagen de Perfil del Cliente *
+            </label>
+            <p style="font-size:11px; color:var(--text-muted); margin:0 0 8px 0;">
+              Selecciona una imagen desde tu computadora (JPG, PNG, WEBP) o utiliza uno de los avatares predeterminados.
+            </p>
+
+            <input type="file" id="clientAvatarFileInput" accept="image/*" style="display:none;" onchange="onClientAvatarFileSelected(this)">
+            
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <button type="button" onclick="document.getElementById('clientAvatarFileInput').click()" class="btn btn-outline" style="padding:6px 14px; font-size:12px; color:#0284c7; border-color:#bae6fd; background:#e0f2fe;">
+                📁 Seleccionar Foto desde tu equipo...
+              </button>
+              
+              <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
+                <span style="font-size:11px; color:#64748b; font-weight:600; margin-left:4px;">Presets:</span>
+                <button type="button" onclick="setClientAvatarPreset('/static/uploads/avatars/avatar_female_1.svg')" class="bank-preset-btn">👩 Ejecutiva 1</button>
+                <button type="button" onclick="setClientAvatarPreset('/static/uploads/avatars/avatar_female_2.svg')" class="bank-preset-btn">👩‍💼 Ejecutiva 2</button>
+                <button type="button" onclick="setClientAvatarPreset('/static/uploads/avatars/avatar_male_1.svg')" class="bank-preset-btn">👨 Profesional 1</button>
+                <button type="button" onclick="setClientAvatarPreset('/static/uploads/avatars/avatar_male_2.svg')" class="bank-preset-btn">👨‍💼 Profesional 2</button>
+                <button type="button" onclick="setClientAvatarPreset('/static/uploads/avatars/default_avatar.svg')" class="bank-preset-btn">👤 Default</button>
+              </div>
+            </div>
+
+            <div style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+              <span id="avatarFileFeedback" style="font-size:11px; color:#059669; font-weight:700;"></span>
+            </div>
+
+            <!-- Input oculto con la URL o ruta actual del avatar -->
+            <input type="hidden" id="clientAvatarUrl" value="/static/uploads/avatars/default_avatar.svg">
+          </div>
+        </div>
+
+        <!-- CAMPOS DEL PERFIL -->
         <div class="grid-2">
           <div class="form-group">
             <label for="nombre">Nombre Completo *</label>
@@ -207,7 +337,7 @@
           </div>
         </div>
 
-        <div class="grid-3" style="margin-top:16px;">
+        <div class="grid-2" style="margin-top:16px;">
           <div class="form-group">
             <label for="antiguedad_laboral">Antigüedad Laboral (Años)</label>
             <input type="number" id="antiguedad_laboral" name="antiguedad_laboral" class="input-field" step="0.5" min="0" value="3.5">
@@ -216,16 +346,6 @@
           <div class="form-group">
             <label for="antiguedad_bancaria">Antigüedad en la Cuenta (Meses)</label>
             <input type="number" id="antiguedad_bancaria" name="antiguedad_bancaria" class="input-field" min="6" value="24">
-          </div>
-
-          <div class="form-group">
-            <label for="avatar_select">Foto / Avatar del Cliente</label>
-            <select id="avatar_select" onchange="updateAvatarPreview(this.value)">
-              <option value="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80">Avatar Femenino Profesional 1</option>
-              <option value="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80">Avatar Femenino Profesional 2</option>
-              <option value="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80">Avatar Masculino Profesional 1</option>
-              <option value="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80">Avatar Masculino Profesional 2</option>
-            </select>
           </div>
         </div>
       </div>
@@ -290,10 +410,10 @@
 
       <!-- BOTONES DE ACCIÓN -->
       <div style="display:flex; justify-content:flex-end; align-items:center; gap:12px; margin-bottom:40px;">
-        <a href="/" class="btn btn-outline" style="padding:10px 24px;">Cancelar</a>
+        <a href="/clientes" class="btn btn-outline" style="padding:10px 24px;">Volver a Clientes</a>
         <button type="submit" id="btnSubmit" class="btn btn-primary" style="padding:11px 32px; font-size:14px; box-shadow:0 4px 12px rgba(2,132,199,0.3);">
           <span data-icon="shield-check" style="width:18px; height:18px;"></span>
-          Guardar y Evaluar en Base de Datos
+          <span id="btnSubmitText">Guardar y Evaluar en Base de Datos</span>
         </button>
       </div>
 
@@ -306,17 +426,17 @@
       <div style="width:60px; height:60px; border-radius:50%; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto;">
         <span data-icon="check-circle" style="width:36px; height:36px;"></span>
       </div>
-      <h2 style="font-size:20px; font-weight:800; color:var(--text-main);">¡Cliente Registrado con Éxito!</h2>
+      <h2 id="modalSuccessTitle" style="font-size:20px; font-weight:800; color:var(--text-main);">¡Cliente Registrado con Éxito!</h2>
       <p id="successMessage" style="font-size:13px; color:var(--text-muted); margin: 8px 0 24px 0;">
-        El cliente y sus movimientos de los 6 meses han sido almacenados de forma segura en la base de datos de CreditSense.
+        El perfil y movimientos han sido almacenados de forma segura en la base de datos de CreditSense.
       </p>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
         <button type="button" id="btnGoToAnalysis" class="btn btn-primary" style="width:100%; padding:12px;">
-          Ver Análisis Crediticio de este Cliente →
+          Ver en el Simulador y Evaluar Scoring →
         </button>
         <button type="button" onclick="resetFormForNewClient()" class="btn btn-outline" style="width:100%; padding:10px;">
-          Registrar Otro Cliente
+          Gestionar Otro Cliente
         </button>
       </div>
     </div>
@@ -335,19 +455,34 @@
     ];
 
     let createdClientKey = '';
+    const initialSelectedId = "{{ selected_client_id or '' }}";
 
     document.addEventListener('DOMContentLoaded', () => {
       buildMonthsTable();
       renderAllIcons();
-      // Cargar preset excelente por defecto para facilitar prueba
-      loadPreset('excelente');
+
+      if (initialSelectedId) {
+        document.getElementById('selectExistingClient').value = initialSelectedId;
+        onSelectExistingClient(initialSelectedId);
+      } else {
+        // Cargar preset excelente por defecto para facilitar pruebas
+        loadPreset('excelente');
+      }
     });
 
-    function buildMonthsTable() {
+    function buildMonthsTable(customData = null) {
       const tbody = document.getElementById('monthsTableBody');
       tbody.innerHTML = '';
 
       PERIODOS_CONFIG.forEach((p, idx) => {
+        let valIng = 2500, valEg = 1800, valDeuda = 200, valSg = 0;
+        if (customData && customData[p.key]) {
+          valIng = customData[p.key].ingresos || 0;
+          valEg = customData[p.key].egresos || 0;
+          valDeuda = customData[p.key].pagos_deuda || 0;
+          valSg = customData[p.key].sobregiros || 0;
+        }
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="font-weight:700; color:var(--text-main);">
@@ -355,24 +490,24 @@
             <input type="hidden" class="row-periodo" value="${p.key}">
           </td>
           <td>
-            <input type="number" class="table-input row-ingreso" value="2500" step="50" min="0" oninput="recalculateKPIs()" required>
+            <input type="number" class="table-input row-ingreso" value="${valIng}" step="50" min="0" oninput="recalculateKPIs()" required>
           </td>
           <td>
-            <input type="number" class="table-input row-egreso" value="1800" step="50" min="0" oninput="recalculateKPIs()" required>
+            <input type="number" class="table-input row-egreso" value="${valEg}" step="50" min="0" oninput="recalculateKPIs()" required>
           </td>
           <td>
-            <input type="number" class="table-input row-deuda" value="200" step="10" min="0" oninput="recalculateKPIs()">
+            <input type="number" class="table-input row-deuda" value="${valDeuda}" step="10" min="0" oninput="recalculateKPIs()">
           </td>
           <td class="text-center">
             <select class="table-input row-sobregiro" style="width:70px; text-align:center;" onchange="recalculateKPIs()">
-              <option value="0" selected>0</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3+</option>
+              <option value="0" ${valSg == 0 ? 'selected' : ''}>0</option>
+              <option value="1" ${valSg == 1 ? 'selected' : ''}>1</option>
+              <option value="2" ${valSg == 2 ? 'selected' : ''}>2</option>
+              <option value="3" ${valSg >= 3 ? 'selected' : ''}>3+</option>
             </select>
           </td>
           <td class="text-right" style="font-weight:700;">
-            <span class="row-flujo-neto" style="color:#059669;">$700.00</span>
+            <span class="row-flujo-neto" style="color:#059669;">$0.00</span>
           </td>
         `;
         tbody.appendChild(tr);
@@ -395,8 +530,10 @@
         sumEgresos += eg;
         sumDeudas += deudas[i] || 0;
 
-        flujoSpans[i].innerText = (fl >= 0 ? '+$' : '-$') + Math.abs(fl).toLocaleString('en-US', {minimumFractionDigits: 2});
-        flujoSpans[i].style.color = fl >= 0 ? '#059669' : '#e11d48';
+        if (flujoSpans[i]) {
+          flujoSpans[i].innerText = (fl >= 0 ? '+$' : '-$') + Math.abs(fl).toLocaleString('en-US', {minimumFractionDigits: 2});
+          flujoSpans[i].style.color = fl >= 0 ? '#059669' : '#e11d48';
+        }
       });
 
       const count = ingresos.length || 1;
@@ -413,7 +550,108 @@
       document.getElementById('kpiTasa').innerText = `${tasaAhorro}% / ${dti}%`;
     }
 
+    // MANEJO DE FOTO / AVATAR
+    function onClientAvatarFileSelected(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        document.getElementById('avatarFileFeedback').innerText = `✓ Foto seleccionada: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('clientAvatarPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function setClientAvatarPreset(svgUrl) {
+      document.getElementById('clientAvatarUrl').value = svgUrl;
+      document.getElementById('clientAvatarPreview').src = svgUrl;
+      document.getElementById('clientAvatarFileInput').value = '';
+      document.getElementById('avatarFileFeedback').innerText = '✓ Preset de foto seleccionado';
+    }
+
+    // CARGAR CLIENTE EXISTENTE PARA EDICIÓN
+    async function onSelectExistingClient(clientId) {
+      if (!clientId) {
+        switchToNewClientMode();
+        return;
+      }
+
+      try {
+        const resp = await fetch(`/api/client/${clientId}`);
+        const data = await resp.json();
+
+        if (data.success && data.client) {
+          const c = data.client;
+          document.getElementById('editClientId').value = c.id;
+          document.getElementById('nombre').value = c.nombre;
+          document.getElementById('rut_dni').value = c.rut_dni;
+          document.getElementById('ocupacion').value = c.ocupacion;
+          document.getElementById('empresa').value = c.empresa;
+          document.getElementById('tipo_contrato').value = c.tipo_contrato;
+          document.getElementById('antiguedad_laboral').value = c.antiguedad_laboral_anios;
+          document.getElementById('antiguedad_bancaria').value = c.antiguedad_bancaria_meses;
+
+          // Foto del cliente
+          const avatarUrl = c.avatar || '/static/uploads/avatars/default_avatar.svg';
+          document.getElementById('clientAvatarUrl').value = avatarUrl;
+          document.getElementById('clientAvatarPreview').src = avatarUrl;
+          document.getElementById('clientAvatarFileInput').value = '';
+          document.getElementById('avatarFileFeedback').innerText = 'Foto actual del cliente cargada.';
+
+          // Reconstruir tabla de meses con la data real existente
+          const monthlyMap = {};
+          if (data.monthly_summary && data.monthly_summary.length > 0) {
+            data.monthly_summary.forEach(m => {
+              monthlyMap[m.periodo] = m;
+            });
+            buildMonthsTable(monthlyMap);
+          }
+
+          // Ajustes visuales de modo edición
+          document.getElementById('badgeCurrentMode').className = 'mode-badge mode-edit';
+          document.getElementById('badgeCurrentMode').innerText = `✏️ Modo: Editando Cliente (${c.id})`;
+          document.getElementById('modeDescriptionText').innerText = `Editando el perfil completo y foto de ${c.nombre}.`;
+          document.getElementById('pageMainTitle').innerText = `Editar Perfil Completo: ${c.nombre}`;
+          document.getElementById('editingBanner').style.display = 'block';
+          document.getElementById('bannerClientName').innerText = `${c.nombre} (RUT: ${c.rut_dni})`;
+          document.getElementById('btnSubmitText').innerText = 'Guardar Modificaciones del Cliente en BD';
+          document.getElementById('presetsBox').style.display = 'none';
+
+        } else {
+          alert("No se pudo cargar la información del cliente.");
+        }
+      } catch (err) {
+        alert("Error de conexión al cargar datos del cliente.");
+      }
+    }
+
+    function switchToNewClientMode() {
+      document.getElementById('editClientId').value = '';
+      document.getElementById('selectExistingClient').value = '';
+      document.getElementById('badgeCurrentMode').className = 'mode-badge mode-new';
+      document.getElementById('badgeCurrentMode').innerText = '➕ Modo: Nuevo Candidato';
+      document.getElementById('modeDescriptionText').innerText = 'Completa los datos y sube la foto para registrar un cliente desde cero.';
+      document.getElementById('pageMainTitle').innerText = 'Carga y Configuración del Perfil del Cliente';
+      document.getElementById('editingBanner').style.display = 'none';
+      document.getElementById('btnSubmitText').innerText = 'Guardar y Evaluar en Base de Datos';
+      document.getElementById('presetsBox').style.display = 'flex';
+      document.getElementById('clientAvatarUrl').value = '/static/uploads/avatars/default_avatar.svg';
+      document.getElementById('clientAvatarPreview').src = '/static/uploads/avatars/default_avatar.svg';
+      document.getElementById('clientAvatarFileInput').value = '';
+      document.getElementById('avatarFileFeedback').innerText = '';
+      document.getElementById('newClientForm').reset();
+      buildMonthsTable();
+      loadPreset('excelente');
+    }
+
     function loadPreset(tipo) {
+      if (document.getElementById('editClientId').value) {
+        // En modo edición no sobrescribir sin aviso
+        if (!confirm("¿Deseas reemplazar los datos del formulario con esta plantilla de prueba?")) return;
+      }
+
       if (tipo === 'excelente') {
         document.getElementById('nombre').value = "Valeria Sofía Rivas";
         document.getElementById('rut_dni').value = "18.940.123-5";
@@ -423,6 +661,7 @@
         document.getElementById('antiguedad_laboral').value = "4.0";
         document.getElementById('antiguedad_bancaria').value = "36";
         document.getElementById('saldo_inicial').value = "3500";
+        setClientAvatarPreset('/static/uploads/avatars/avatar_female_1.svg');
 
         const ingInputs = document.querySelectorAll('.row-ingreso');
         const egInputs = document.querySelectorAll('.row-egreso');
@@ -448,21 +687,22 @@
         document.getElementById('antiguedad_laboral').value = "2.0";
         document.getElementById('antiguedad_bancaria').value = "18";
         document.getElementById('saldo_inicial').value = "1200";
+        setClientAvatarPreset('/static/uploads/avatars/avatar_male_1.svg');
 
         const ingInputs = document.querySelectorAll('.row-ingreso');
         const egInputs = document.querySelectorAll('.row-egreso');
         const dInputs = document.querySelectorAll('.row-deuda');
         const sgSelects = document.querySelectorAll('.row-sobregiro');
 
-        const valoresIng = [1900, 2800, 1400, 2500, 1600, 2400];
-        const valoresEg = [1600, 1750, 1500, 1800, 1550, 1700];
-        const valoresDeuda = [180, 180, 180, 180, 180, 180];
+        const valoresIng = [2400, 2100, 2500, 1900, 2200, 2350];
+        const valoresEg = [1700, 1650, 1800, 1600, 1750, 1700];
+        const valoresDeuda = [350, 350, 350, 350, 350, 350];
 
         ingInputs.forEach((inp, idx) => {
           inp.value = valoresIng[idx];
           egInputs[idx].value = valoresEg[idx];
           dInputs[idx].value = valoresDeuda[idx];
-          sgSelects[idx].value = "0";
+          sgSelects[idx].value = idx === 3 ? "1" : "0";
         });
       } else {
         document.getElementById('nombre').value = "Marcos Salgado Pino";
@@ -473,6 +713,7 @@
         document.getElementById('antiguedad_laboral').value = "1.0";
         document.getElementById('antiguedad_bancaria').value = "12";
         document.getElementById('saldo_inicial').value = "400";
+        setClientAvatarPreset('/static/uploads/avatars/avatar_male_2.svg');
 
         const ingInputs = document.querySelectorAll('.row-ingreso');
         const egInputs = document.querySelectorAll('.row-egreso');
@@ -481,7 +722,7 @@
 
         const valoresIng = [1600, 1600, 1600, 1400, 1500, 1450];
         const valoresEg = [1550, 1700, 1650, 1600, 1750, 1600];
-        const valoresDeuda = [750, 750, 750, 750, 750, 750]; // DTI alto > 48%
+        const valoresDeuda = [750, 750, 750, 750, 750, 750];
 
         ingInputs.forEach((inp, idx) => {
           inp.value = valoresIng[idx];
@@ -493,6 +734,7 @@
       recalculateKPIs();
     }
 
+    // GUARDAR EN BASE DE DATOS (NUEVO O EDICIÓN)
     async function handleSaveClient(e) {
       e.preventDefault();
 
@@ -500,7 +742,28 @@
       btn.disabled = true;
       btn.innerHTML = `<span style="display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px;"></span> Guardando...`;
 
+      const editId = document.getElementById('editClientId').value.trim();
+      let finalAvatarUrl = document.getElementById('clientAvatarUrl').value;
+
+      // 1. Subir archivo de foto si fue seleccionado desde el equipo
+      const fileInput = document.getElementById('clientAvatarFileInput');
+      if (fileInput.files && fileInput.files[0]) {
+        try {
+          const formData = new FormData();
+          formData.append('avatar', fileInput.files[0]);
+          const upResp = await fetch('/api/upload-avatar', { method: 'POST', body: formData });
+          const upData = await upResp.json();
+          if (upData.success) {
+            finalAvatarUrl = upData.avatar_url;
+            document.getElementById('clientAvatarUrl').value = finalAvatarUrl;
+          }
+        } catch (uploadErr) {
+          console.warn('Error subiendo foto:', uploadErr);
+        }
+      }
+
       const clientInfo = {
+        id: editId || undefined,
         nombre: document.getElementById('nombre').value.trim(),
         rut_dni: document.getElementById('rut_dni').value.trim(),
         ocupacion: document.getElementById('ocupacion').value.trim(),
@@ -508,8 +771,8 @@
         tipo_contrato: document.getElementById('tipo_contrato').value,
         antiguedad_laboral_anios: parseFloat(document.getElementById('antiguedad_laboral').value) || 1.0,
         antiguedad_bancaria_meses: parseInt(document.getElementById('antiguedad_bancaria').value) || 12,
-        avatar: document.getElementById('avatar_select').value,
-        etiqueta_perfil: 'Cliente Creado Manualmente'
+        avatar: finalAvatarUrl || '/static/uploads/avatars/default_avatar.svg',
+        etiqueta_perfil: editId ? 'Cliente Actualizado' : 'Cliente Registrado Manual'
       };
 
       const monthlyData = [];
@@ -536,6 +799,7 @@
       };
 
       try {
+        // Enviar a la base de datos
         const resp = await fetch('/api/save-client', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -545,10 +809,17 @@
 
         if (result.success) {
           createdClientKey = result.perfil_key;
-          document.getElementById('successMessage').innerText = `El candidato ${clientInfo.nombre} ha sido guardado exitosamente en SQLite con ${result.total_transacciones} transacciones de 6 meses generadas.`;
           
+          if (editId) {
+            document.getElementById('modalSuccessTitle').innerText = '¡Perfil y Foto Modificados con Éxito!';
+            document.getElementById('successMessage').innerText = `Los datos y la foto del cliente ${clientInfo.nombre} han sido actualizados en la base de datos.`;
+          } else {
+            document.getElementById('modalSuccessTitle').innerText = '¡Cliente Registrado con Éxito!';
+            document.getElementById('successMessage').innerText = `El candidato ${clientInfo.nombre} ha sido guardado exitosamente en SQLite con ${result.total_transacciones} transacciones de 6 meses generadas.`;
+          }
+
           document.getElementById('btnGoToAnalysis').onclick = () => {
-            window.location.href = `/?client=${createdClientKey}`;
+            window.location.href = `/simulador?client=${createdClientKey}`;
           };
 
           document.getElementById('successModal').classList.add('open');
@@ -560,15 +831,14 @@
         alert("Error de conexión al guardar el cliente.");
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<span data-icon="shield-check" style="width:18px; height:18px;"></span> Guardar y Evaluar en Base de Datos`;
+        btn.innerHTML = `<span data-icon="shield-check" style="width:18px; height:18px;"></span> <span id="btnSubmitText">${editId ? 'Guardar Modificaciones del Cliente en BD' : 'Guardar y Evaluar en Base de Datos'}</span>`;
         renderAllIcons();
       }
     }
 
     function resetFormForNewClient() {
       document.getElementById('successModal').classList.remove('open');
-      document.getElementById('newClientForm').reset();
-      buildMonthsTable();
+      switchToNewClientMode();
     }
   </script>
 </body>

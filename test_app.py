@@ -5,6 +5,7 @@ Cubre Front Principal, Clientes, Carga Multi-Banco y Simulador.
 import unittest
 import json
 import os
+import io
 from app import app
 from backend.database import get_all_clients
 
@@ -192,6 +193,79 @@ class CreditAppTestCase(unittest.TestCase):
 
         # 5. Limpieza: Eliminar cliente de prueba
         self.app.post('/api/client/delete', data=json.dumps({'client_id': 'CLI-TEST-BANKS-01'}), content_type='application/json')
+
+    def test_avatar_upload_and_full_profile_edit(self):
+        """Verifica la subida de foto de avatar, consulta de perfil completo y edición persistente en base de datos."""
+        # 1. Probar endpoint /api/upload-avatar con un archivo de imagen en memoria
+        dummy_png = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        upload_resp = self.app.post('/api/upload-avatar', data={
+            'avatar': (io.BytesIO(dummy_png), 'mi_foto_cliente.png')
+        })
+        self.assertEqual(upload_resp.status_code, 200)
+        upload_data = json.loads(upload_resp.data)
+        self.assertTrue(upload_data['success'])
+        avatar_url = upload_data['avatar_url']
+        self.assertTrue(avatar_url.startswith('/static/uploads/avatars/avatar_'))
+
+        # 2. Crear cliente con ese avatar
+        client_id = 'CLI-TEST-AVATAR-99'
+        create_payload = {
+            'client_info': {
+                'id': client_id,
+                'nombre': 'Cliente Con Foto Personalizada',
+                'rut_dni': '15.678.901-2',
+                'ocupacion': 'Arquitecto de Software',
+                'empresa': 'Tech Solutions SpA',
+                'tipo_contrato': 'Indefinido',
+                'antiguedad_laboral_anios': 5.0,
+                'antiguedad_bancaria_meses': 48,
+                'avatar': avatar_url
+            },
+            'monthly_data': [
+                {'periodo': '2026-05', 'ingresos': 4000.0, 'egresos': 2000.0, 'pagos_deuda': 300.0, 'sobregiros': 0},
+                {'periodo': '2026-06', 'ingresos': 4200.0, 'egresos': 2100.0, 'pagos_deuda': 300.0, 'sobregiros': 0}
+            ],
+            'saldo_inicial': 3000.0
+        }
+        res_create = self.app.post('/api/save-client', data=json.dumps(create_payload), content_type='application/json')
+        self.assertEqual(res_create.status_code, 200)
+
+        # 3. Consultar perfil completo del cliente vía GET /api/client/<client_id>
+        res_get = self.app.get(f'/api/client/{client_id}')
+        self.assertEqual(res_get.status_code, 200)
+        client_data = json.loads(res_get.data)
+        self.assertTrue(client_data['success'])
+        self.assertEqual(client_data['client']['avatar'], avatar_url)
+        self.assertGreater(len(client_data['monthly_summary']), 0)
+
+        # 4. Modificar el perfil completo cambiando ocupación y seleccionando otra foto/avatar
+        new_avatar_url = '/static/uploads/avatars/avatar_female_2.svg'
+        update_payload = {
+            'client_id': client_id,
+            'updated_info': {
+                'nombre': 'Cliente Con Foto Actualizada',
+                'rut_dni': '15.678.901-2',
+                'ocupacion': 'CTO & VP Engineering',
+                'empresa': 'Enterprise Tech Latam',
+                'tipo_contrato': 'Empresario / Dueño',
+                'antiguedad_laboral_anios': 6.5,
+                'antiguedad_bancaria_meses': 60,
+                'avatar': new_avatar_url
+            }
+        }
+        res_update = self.app.post('/api/client/update', data=json.dumps(update_payload), content_type='application/json')
+        self.assertEqual(res_update.status_code, 200)
+        self.assertTrue(json.loads(res_update.data)['success'])
+
+        # 5. Verificar que el perfil y el nuevo avatar quedaron persistidos en SQLite
+        res_verify = self.app.get(f'/api/client/{client_id}')
+        updated_client = json.loads(res_verify.data)['client']
+        self.assertEqual(updated_client['nombre'], 'Cliente Con Foto Actualizada')
+        self.assertEqual(updated_client['ocupacion'], 'CTO & VP Engineering')
+        self.assertEqual(updated_client['avatar'], new_avatar_url)
+
+        # 6. Limpieza
+        self.app.post('/api/client/delete', data=json.dumps({'client_id': client_id}), content_type='application/json')
 
 
 if __name__ == '__main__':

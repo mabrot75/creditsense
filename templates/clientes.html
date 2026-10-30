@@ -175,7 +175,7 @@
             <tr class="client-row" data-search="{{ c.client_info.nombre }} {{ c.client_info.rut_dni }} {{ c.client_info.empresa }} {{ c.client_info.ocupacion }}">
               <td>
                 <div style="display:flex; align-items:center; gap:10px;">
-                  <img src="{{ c.client_info.avatar }}" alt="Avatar" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid #e2e8f0;">
+                  <img src="{{ c.client_info.avatar }}" alt="Avatar" onerror="this.src='/static/uploads/avatars/default_avatar.svg'" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid #e2e8f0; background:#f1f5f9;">
                   <div>
                     <div style="font-weight:800; color:var(--text-main);">
                       {{ c.client_info.nombre }}
@@ -239,6 +239,43 @@
       <form id="editClientForm" onsubmit="handleUpdateClient(event)">
         <input type="hidden" id="editClientId">
 
+        <!-- FOTO / AVATAR DEL CLIENTE -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:14px;">
+          <label style="font-size:11px; font-weight:700; color:var(--text-main); display:block; margin-bottom:8px;">
+            Foto o Imagen del Cliente *
+          </label>
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="position:relative; width:68px; height:68px; flex-shrink:0;">
+              <img id="editAvatarPreview" src="/static/uploads/avatars/default_avatar.svg" alt="Foto Cliente" 
+                   onerror="this.src='/static/uploads/avatars/default_avatar.svg'"
+                   style="width:68px; height:68px; border-radius:50%; object-fit:cover; border:3px solid #0284c7; box-shadow:0 2px 8px rgba(0,0,0,0.12); background:#fff;">
+              <button type="button" onclick="document.getElementById('editAvatarFileInput').click()" 
+                      title="Seleccionar foto desde tu equipo"
+                      style="position:absolute; bottom:-2px; right:-2px; width:26px; height:26px; border-radius:50%; background:#0284c7; color:#fff; border:2px solid #fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px; padding:0;">
+                📷
+              </button>
+            </div>
+            <div style="flex:1;">
+              <input type="file" id="editAvatarFileInput" accept="image/*" style="display:none;" onchange="onEditAvatarFileSelected(this)">
+              <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                <button type="button" onclick="document.getElementById('editAvatarFileInput').click()" class="btn-action" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; padding:6px 12px;">
+                  📁 Seleccionar Foto desde tu equipo...
+                </button>
+              </div>
+              <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center; margin-top:8px;">
+                <span style="font-size:10px; color:#64748b; font-weight:600;">O elegir preset:</span>
+                <button type="button" onclick="setEditAvatarPreset('/static/uploads/avatars/avatar_female_1.svg')" class="bank-preset-btn" style="padding:2px 6px; font-size:10px;">👩 Ejecutiva 1</button>
+                <button type="button" onclick="setEditAvatarPreset('/static/uploads/avatars/avatar_female_2.svg')" class="bank-preset-btn" style="padding:2px 6px; font-size:10px;">👩‍💼 Ejecutiva 2</button>
+                <button type="button" onclick="setEditAvatarPreset('/static/uploads/avatars/avatar_male_1.svg')" class="bank-preset-btn" style="padding:2px 6px; font-size:10px;">👨 Profesional 1</button>
+                <button type="button" onclick="setEditAvatarPreset('/static/uploads/avatars/avatar_male_2.svg')" class="bank-preset-btn" style="padding:2px 6px; font-size:10px;">👨‍💼 Profesional 2</button>
+                <button type="button" onclick="setEditAvatarPreset('/static/uploads/avatars/default_avatar.svg')" class="bank-preset-btn" style="padding:2px 6px; font-size:10px;">👤 Default</button>
+              </div>
+              <span id="editAvatarFileName" style="font-size:11px; color:#059669; margin-top:4px; display:block; font-weight:600;"></span>
+            </div>
+          </div>
+          <input type="hidden" id="editAvatar">
+        </div>
+
         <div class="form-group">
           <label for="editNombre">Nombre Completo *</label>
           <input type="text" id="editNombre" required>
@@ -282,13 +319,16 @@
           </div>
         </div>
 
-        <input type="hidden" id="editAvatar">
-
-        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
-          <button type="button" onclick="closeEditModal()" class="btn btn-secondary" style="padding:8px 14px;">Cancelar</button>
-          <button type="submit" id="btnSaveEdit" class="btn btn-primary" style="padding:8px 18px; background:#0284c7;">
-            Guardar Cambios
-          </button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; flex-wrap:wrap; gap:10px;">
+          <a id="btnGoToFullEdit" href="#" style="font-size:11px; color:#0284c7; text-decoration:none; font-weight:700;">
+            📝 Abrir en Carga Completa de 6 Meses →
+          </a>
+          <div style="display:flex; gap:8px;">
+            <button type="button" onclick="closeEditModal()" class="btn btn-secondary" style="padding:8px 14px;">Cancelar</button>
+            <button type="submit" id="btnSaveEdit" class="btn btn-primary" style="padding:8px 20px; background:#0284c7; box-shadow:0 2px 6px rgba(2,132,199,0.3);">
+              Guardar Cambios
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -342,6 +382,25 @@
       document.getElementById('clientsCount').innerText = visible;
     }
 
+    function onEditAvatarFileSelected(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        document.getElementById('editAvatarFileName').innerText = `✓ Foto seleccionada: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('editAvatarPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function setEditAvatarPreset(svgUrl) {
+      document.getElementById('editAvatar').value = svgUrl;
+      document.getElementById('editAvatarPreview').src = svgUrl;
+      document.getElementById('editAvatarFileInput').value = '';
+      document.getElementById('editAvatarFileName').innerText = '✓ Preset de foto seleccionado';
+    }
+
     // Modal Edit Handlers
     function openEditModal(id, nombre, rut, ocupacion, empresa, contrato, antLab, antBanc, avatar) {
       document.getElementById('editClientId').value = id;
@@ -352,14 +411,43 @@
       document.getElementById('editTipoContrato').value = contrato;
       document.getElementById('editAntiguedadLab').value = antLab;
       document.getElementById('editAntiguedadBanc').value = antBanc;
-      document.getElementById('editAvatar').value = avatar;
+
+      const currentAvatar = avatar || '/static/uploads/avatars/default_avatar.svg';
+      document.getElementById('editAvatar').value = currentAvatar;
+      document.getElementById('editAvatarPreview').src = currentAvatar;
+      document.getElementById('editAvatarFileInput').value = '';
+      document.getElementById('editAvatarFileName').innerText = '';
+
+      document.getElementById('btnGoToFullEdit').href = `/nuevo-cliente?client_id=${id}`;
       document.getElementById('editModal').classList.add('open');
     }
     function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
 
     async function handleUpdateClient(e) {
       e.preventDefault();
+      const btn = document.getElementById('btnSaveEdit');
+      btn.disabled = true;
+      btn.innerText = 'Guardando cambios...';
+
       const id = document.getElementById('editClientId').value;
+      let finalAvatar = document.getElementById('editAvatar').value;
+
+      // Si seleccionó un archivo nuevo desde su equipo, subirlo primero
+      const fileInput = document.getElementById('editAvatarFileInput');
+      if (fileInput.files && fileInput.files[0]) {
+        try {
+          const formData = new FormData();
+          formData.append('avatar', fileInput.files[0]);
+          const upResp = await fetch('/api/upload-avatar', { method: 'POST', body: formData });
+          const upData = await upResp.json();
+          if (upData.success) {
+            finalAvatar = upData.avatar_url;
+          }
+        } catch (uploadErr) {
+          console.warn('Error subiendo archivo de foto:', uploadErr);
+        }
+      }
+
       const payload = {
         client_id: id,
         updated_info: {
@@ -370,7 +458,7 @@
           tipo_contrato: document.getElementById('editTipoContrato').value,
           antiguedad_laboral_anios: parseFloat(document.getElementById('editAntiguedadLab').value) || 1.0,
           antiguedad_bancaria_meses: parseInt(document.getElementById('editAntiguedadBanc').value) || 12,
-          avatar: document.getElementById('editAvatar').value
+          avatar: finalAvatar
         }
       };
 
@@ -382,13 +470,16 @@
         });
         const res = await resp.json();
         if (res.success) {
-          alert("Datos del cliente actualizados exitosamente en la base de datos.");
+          alert("✓ Datos y foto del cliente actualizados exitosamente en la base de datos.");
           window.location.reload();
         } else {
           alert("Error: " + res.error);
         }
       } catch (err) {
         alert("Error de conexión al actualizar cliente.");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Guardar Cambios';
       }
     }
 

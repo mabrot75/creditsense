@@ -6,12 +6,15 @@ Controla los módulos de Clientes, Carga de Movimientos Multi-Banco y Simulador 
 import os
 import io
 import json
+import uuid
+import base64
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
 import pandas as pd
 from backend.credit_engine import CreditAnalysisEngine
 from backend.sample_data import export_sample_files_to_disk
 from backend.database import (
-    init_db, get_all_clients, get_client_by_key, get_client_by_id,
+    init_db, get_all_clients, get_client_by_key, get_client_by_id, get_client_full_data,
+    extract_monthly_summary_from_transactions,
     save_client_to_db, update_client_info, delete_client_by_id,
     append_transactions_to_client, generate_transactions_from_monthly_inputs,
     rename_bank_for_client, delete_bank_movements, get_client_banks_and_files
@@ -19,6 +22,8 @@ from backend.database import (
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAMPLE_DIR = os.path.join(BASE_DIR, 'ejemplos_estados_cuenta')
+UPLOAD_AVATAR_DIR = os.path.join(BASE_DIR, 'static', 'uploads', 'avatars')
+os.makedirs(UPLOAD_AVATAR_DIR, exist_ok=True)
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'), static_folder=os.path.join(BASE_DIR, 'static'))
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max
@@ -66,13 +71,67 @@ def simulador_view():
 
 @app.route('/nuevo-cliente')
 def nuevo_cliente_view():
-    """Ventana independiente para registrar un nuevo cliente desde cero"""
-    return render_template('nuevo_cliente.html')
+    """Ventana independiente para registrar o editar un cliente completo con sus movimientos y foto"""
+    candidates = get_all_clients()
+    selected_id = request.args.get('client_id', '').strip()
+    return render_template('nuevo_cliente.html', candidates=candidates, selected_client_id=selected_id)
 
 
 # =========================================================================
 # API REST (CLIENTES Y CONSULTAS)
 # =========================================================================
+
+@app.route('/api/upload-avatar', methods=['POST'])
+def upload_avatar():
+    """Recibe una imagen (archivo multipart o Data URI base64) y la almacena en static/uploads/avatars/."""
+    try:
+        # 1. Caso archivo subido vía multipart/form-data
+        if 'avatar' in request.files:
+            file = request.files['avatar']
+            if file and file.filename:
+                ext = os.path.splitext(file.filename)[1].lower()
+                if ext not in ['.jpg', '.jpeg', '.png', '.webp', '.svg']:
+                    ext = '.jpg'
+                filename = f"avatar_{uuid.uuid4().hex[:12]}{ext}"
+                filepath = os.path.join(UPLOAD_AVATAR_DIR, filename)
+                file.save(filepath)
+                return jsonify({'success': True, 'avatar_url': f"/static/uploads/avatars/{filename}"})
+
+        # 2. Caso Data URI Base64 enviado en JSON
+        data = request.json or {}
+        image_data = data.get('image_data', '')
+        if image_data and 'base64,' in image_data:
+            header, encoded = image_data.split('base64,', 1)
+            ext = '.png' if 'png' in header else ('.webp' if 'webp' in header else ('.svg' if 'svg' in header else '.jpg'))
+            filename = f"avatar_{uuid.uuid4().hex[:12]}{ext}"
+            filepath = os.path.join(UPLOAD_AVATAR_DIR, filename)
+            with open(filepath, 'wb') as fh:
+                fh.write(base64.b64decode(encoded))
+            return jsonify({'success': True, 'avatar_url': f"/static/uploads/avatars/{filename}"})
+
+        return jsonify({'success': False, 'error': 'No se recibió ninguna imagen válida.'}), 400
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': f"Error al guardar imagen: {str(e)}"}), 500
+
+
+@app.route('/api/client/<client_id>', methods=['GET'])
+def get_client_profile_api(client_id):
+    """Obtiene el perfil completo de un cliente y el resumen de sus movimientos mensuales."""
+    try:
+        client_info, txs = get_client_full_data(client_id)
+        if not client_info:
+            return jsonify({'success': False, 'error': f'Cliente {client_id} no encontrado.'}), 404
+
+        monthly_summary = extract_monthly_summary_from_transactions(txs)
+        return jsonify({
+            'success': True,
+            'client': client_info,
+            'monthly_summary': monthly_summary,
+            'total_transacciones': len(txs)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
 
 @app.route('/api/candidates', methods=['GET'])
 def list_candidates():
